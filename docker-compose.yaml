@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: pg_db
+    ports: 
+      - "5434:5432"
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - task-management-network
+  backend: 
+    build: .
+    volumes:
+      - .:/app
+      - /app/node_modules
+    container_name: backend_container
+    restart: always
+    ports: 
+      - 8000:8000
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    networks:
+      - task-management-network    
+volumes: 
+  postgres_data:
+networks:
+  task-management-network:
+    driver: bridge
+
