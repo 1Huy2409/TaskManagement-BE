@@ -1,8 +1,9 @@
+import { healthCheckRegistry } from "@/apis/healthcheck/healthcheck.router.js";
 import { userRegistry } from "@/apis/user/user.router.js";
 import { OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 
 export function generateOpenAPIDocument() {
-    const registry = new OpenAPIRegistry([userRegistry])
+    const registry = new OpenAPIRegistry([userRegistry, healthCheckRegistry])
     const generator = new OpenApiGeneratorV3(registry.definitions)
 
     return generator.generateDocument({

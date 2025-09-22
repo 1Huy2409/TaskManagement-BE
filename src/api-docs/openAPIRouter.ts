@@ -4,7 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 
 import { generateOpenAPIDocument } from './openAPIDocumentGenerator.js';
 
-export const openAPIRouter: Router = (() => {
+export function buildOpenAPIRouter(): Router {
     const router = express.Router();
     const openAPIDocument = generateOpenAPIDocument();
 
@@ -16,4 +16,4 @@ export const openAPIRouter: Router = (() => {
     router.use('/', swaggerUi.serve, swaggerUi.setup(openAPIDocument));
 
     return router;
-})();
+}
