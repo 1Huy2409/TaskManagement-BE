@@ -1,5 +1,5 @@
-import { healthCheckRegistry } from "@/apis/healthcheck/healthcheck.router.js";
-import { userRegistry } from "@/apis/user/user.router.js";
+import { healthCheckRegistry } from "@/apis/healthcheck/healthcheck.router";
+import { userRegistry } from "@/apis/user/user.router";
 import { OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 
 export function generateOpenAPIDocument() {

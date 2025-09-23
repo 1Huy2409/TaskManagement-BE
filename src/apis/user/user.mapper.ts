@@ -1,5 +1,5 @@
-import { User } from "@/common/entities/user.entity.js";
-import type { UserResponse } from "./user.model.js";
+import { User } from "@/common/entities/user.entity";
+import type { UserResponse } from "./user.model";
 
 export const toUserResponse = (user: User): UserResponse => ({
   id: user.id,

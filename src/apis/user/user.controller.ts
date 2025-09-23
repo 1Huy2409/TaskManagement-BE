@@ -1,9 +1,9 @@
-import UserService from "./user.service.js";
+import UserService from "./user.service";
 import type { Request, Response } from "express";
-import { handleServiceResponse } from "@/common/utils/httpHandler.js";
-import { ResponseStatus, ServiceResponse } from "@/common/models/service.response.js";
+import { handleServiceResponse } from "@/common/utils/httpHandler";
+import { ResponseStatus, ServiceResponse } from "@/common/models/service.response";
 import { StatusCodes } from "http-status-codes";
-import { BadRequestError } from "@/common/handler/error.response.js";
+import { BadRequestError } from "@/common/handler/error.response";
 
 export default class UserController {
     constructor(

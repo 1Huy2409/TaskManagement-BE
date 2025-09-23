@@ -1,12 +1,12 @@
 import express from 'express'
 import type { Router } from 'express'
-import { User } from '../entities/user.entity.js'
-import UserController from '@/apis/user/user.controller.js'
-import UserService from '@/apis/user/user.service.js'
-import userRouter from '@/apis/user/user.router.js'
-import healthCheckRouter from '@/apis/healthcheck/healthcheck.router.js'
-import { AppDataSource } from '@/config/db.config.js'
-import HealthCheckController from '@/apis/healthcheck/healthCheck.controller.js'
+import { User } from '../entities/user.entity'
+import UserController from '@/apis/user/user.controller'
+import UserService from '@/apis/user/user.service'
+import userRouter from '@/apis/user/user.router'
+import healthCheckRouter from '@/apis/healthcheck/healthcheck.router'
+import { AppDataSource } from '@/config/db.config'
+import HealthCheckController from '@/apis/healthcheck/healthcheck.controller'
 
 const mainRouter: Router = express.Router()
 const initHealthCheckModule = () => {

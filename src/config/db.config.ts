@@ -1,10 +1,6 @@
 import { DataSource } from "typeorm";
-import { User } from '../common/entities/user.entity.js';
-import { fileURLToPath } from 'url';
+import { User } from '../common/entities/user.entity';
 import path from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename)
 export const AppDataSource = new DataSource({
     type: 'postgres',
     host: process.env.POSTGRES_HOST || 'postgres',

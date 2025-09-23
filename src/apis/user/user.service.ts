@@ -1,8 +1,8 @@
-import type { UserResponse } from "./user.model.js";
+import type { UserResponse } from "./user.model";
 import type { Repository } from "typeorm";
-import { User } from "@/common/entities/user.entity.js";
-import { NotFoundError } from "@/common/handler/error.response.js";
-import { toUserResponse } from "./user.mapper.js";
+import { User } from "@/common/entities/user.entity";
+import { NotFoundError } from "@/common/handler/error.response";
+import { toUserResponse } from "./user.mapper";
 
 export default class UserService {
     constructor(

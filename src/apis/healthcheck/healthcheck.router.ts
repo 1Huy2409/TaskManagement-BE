@@ -3,7 +3,7 @@ import { unknown, z } from 'zod'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import type { Router, Request, Response } from 'express';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilder.js';
-import type HealthCheckController from './healthCheck.controller.js';
+import HealthCheckController from './healthcheck.controller';
 
 export const healthCheckRegistry = new OpenAPIRegistry();
 export default function healthCheckRouter(controller: HealthCheckController): Router {

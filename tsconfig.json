@@ -11,7 +11,7 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
+    "module": "commonjs",
     "target": "esnext",
     "types": ["node"],
     "experimentalDecorators": true,
@@ -40,9 +40,9 @@
 
     // Recommended Options
     "strict": true,
+    "esModuleInterop": true,
     "strictPropertyInitialization": false,
     "jsx": "react-jsx",
-    "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",

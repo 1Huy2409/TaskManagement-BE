@@ -1,6 +1,6 @@
 import type { MigrationInterface, QueryRunner } from "typeorm"
-import { User } from "../entities/user.entity.js"
-import { hashPassword, comparePassword } from "../utils/hashPassword.js"
+import { User } from "../entities/user.entity"
+import { hashPassword, comparePassword } from "../utils/hashPassword"
 export class SeedUsers1726851200000 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {

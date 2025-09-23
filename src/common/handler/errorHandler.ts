@@ -1,7 +1,7 @@
 import type { ErrorRequestHandler } from "express";
 import { ReasonPhrases, StatusCodes } from "http-status-codes";
 import type { Request, Response, NextFunction } from "express";
-import { ErrorResponse } from "./error.response.js";
+import { ErrorResponse } from "./error.response";
 export const errorHandler: ErrorRequestHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
     console.log(err);
     const status = err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR

@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import { z } from 'zod'
-import { ServiceResponseSchema } from "@/common/models/service.response.js";
+import { ServiceResponseSchema } from "@/common/models/service.response";
 
 export function createApiResponse(schema: z.ZodTypeAny, description: string, statusCode = StatusCodes.OK) {
     return {
