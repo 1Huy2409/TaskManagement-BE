@@ -3,6 +3,7 @@ import { BadRequestError, NotFoundError } from "@/common/handler/error.response"
 import { Repository } from "typeorm";
 import { comparePassword } from "@/common/utils/handlePassword";
 import { signAccessToken, signRefreshToken, verifyAccessToken } from "@/common/utils/auth.util";
+import { email } from "zod";
 export default class AuthService {
     constructor(private userRepository: Repository<User>) { }
 
@@ -19,6 +20,15 @@ export default class AuthService {
         const verifyPassword = await comparePassword(password, hashedPassword)
         if (!verifyPassword) {
             throw new BadRequestError(`Password is incorrect!`)
+        }
+        const payload = { sub: user.id, username: user.username, email: user.email }
+        const accessToken = signAccessToken(payload);
+        const refreshToken = signRefreshToken(payload);
+        return { accessToken, refreshToken }
+    }
+    googleLogin = async (user: User | null): Promise<{ accessToken: string, refreshToken: string }> => {
+        if (!user) {
+            throw new NotFoundError('User account was not created!')
         }
         const payload = { sub: user.id, username: user.username, email: user.email }
         const accessToken = signAccessToken(payload);

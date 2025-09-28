@@ -31,6 +31,6 @@ const initAuthModule = () => {
     mainRouter.use('/auth', authRouter(authController))
 }
 initHealthCheckModule();
-// initAuthModule();
+initAuthModule();
 initUserModule();
 export default mainRouter;
