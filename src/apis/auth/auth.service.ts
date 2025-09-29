@@ -1,9 +1,13 @@
+import { PostRegisterSchema, RegisterForm } from './schema/auth.schema';
 import { User } from "@/common/entities/user.entity";
-import { BadRequestError, NotFoundError } from "@/common/handler/error.response";
+import { AuthFailureError, BadRequestError, ConflictRequestError, NotFoundError } from "@/common/handler/error.response";
 import { Repository } from "typeorm";
-import { comparePassword } from "@/common/utils/handlePassword";
-import { signAccessToken, signRefreshToken, verifyAccessToken } from "@/common/utils/auth.util";
+import { comparePassword, hashPassword } from "@/common/utils/handlePassword";
+import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "@/common/utils/auth.util";
 import { email } from "zod";
+import { toUserResponse } from '../user/user.mapper';
+import { UserResponse } from '../user/user.model';
+import { Request } from 'express';
 export default class AuthService {
     constructor(private userRepository: Repository<User>) { }
 
@@ -34,5 +38,45 @@ export default class AuthService {
         const accessToken = signAccessToken(payload);
         const refreshToken = signRefreshToken(payload);
         return { accessToken, refreshToken }
+    }
+
+    register = async (registerData: RegisterForm): Promise<UserResponse> => {
+        const { fullname, username, email, password } = registerData;
+        // check duplicate for username and email
+        const existingUsername = await this.userRepository.findOne({
+            where: { username: username }
+        })
+        if (existingUsername) {
+            throw new ConflictRequestError(`This username exist in this application!`)
+        }
+        const existingEmail = await this.userRepository.findOne({
+            where: { email: email }
+        })
+        if (existingEmail) {
+            throw new ConflictRequestError(`This email exist in this application!`)
+        }
+        const newUser = this.userRepository.create({
+            fullname: fullname,
+            username: username,
+            email: email,
+            password: await hashPassword(password)
+        })
+        await this.userRepository.save(newUser)
+        return toUserResponse(newUser);
+    }
+
+    refreshToken = async (req: Request): Promise<{ newAccessToken: string, newRefreshToken: string }> => {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            throw new AuthFailureError('Refresh token is not found!')
+        }
+        const { sub, username, email } = verifyRefreshToken(refreshToken)
+        const newPayload = { sub, username, email }
+        const newAccessToken = signAccessToken(newPayload)
+        const newRefreshToken = signRefreshToken(newPayload)
+        return {
+            newAccessToken,
+            newRefreshToken
+        }
     }
 }

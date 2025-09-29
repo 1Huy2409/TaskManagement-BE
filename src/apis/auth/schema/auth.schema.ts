@@ -17,3 +17,18 @@ export const PostLogin: ZodRequestBody = {
         }
     }
 }
+export type RegisterForm = z.infer<typeof PostRegisterSchema>
+export const PostRegisterSchema = z.object({
+    fullname: z.string().openapi({ example: "Nguyen Huu Nhat Huy" }),
+    username: z.string().openapi({ example: "username@123" }),
+    email: z.string().openapi({ example: "nguyenvana2409@gmail.com" }),
+    password: z.string().openapi({ example: "your_password" })
+})
+export const PostRegister: ZodRequestBody = {
+    description: 'Register form',
+    content: {
+        'application/json': {
+            schema: PostRegisterSchema
+        }
+    }
+}
