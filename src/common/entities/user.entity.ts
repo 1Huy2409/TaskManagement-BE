@@ -1,7 +1,13 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Comment } from "./comment.entity";
+import { Notification } from "./notification.entity";
+import { DateTimeEntity } from "./base/date-time.entity";
+import { ProjectMember } from "./project-member.entity";
+import { BoardMember } from "./board-member.entity";
+import { CardMember } from "./card-member.entity";
 
 @Entity("users")
-export class User {
+export class User extends DateTimeEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string
 
@@ -20,9 +26,24 @@ export class User {
     @Column({ type: 'varchar', length: 255 })
     password: string
 
-    @CreateDateColumn()
-    created_at: Date
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    avatarUrl: string
 
-    @UpdateDateColumn()
-    updated_at: Date
+    @Column({ type: 'boolean', nullable: false, default: true })
+    isActive: boolean
+
+    @OneToMany(() => ProjectMember, (projectMember) => projectMember.user)
+    projectMembers: ProjectMember[]
+
+    @OneToMany(() => BoardMember, (boardMember) => boardMember.user)
+    boardMembers: BoardMember[]
+
+    @OneToMany(() => CardMember, (cardMember) => cardMember.user)
+    cardMembers: CardMember[]
+
+    @OneToMany(() => Comment, (comment) => comment.user)
+    comments: Comment[]
+
+    @OneToMany(() => Notification, (notification) => notification.user)
+    notifications: Notification[]
 }
