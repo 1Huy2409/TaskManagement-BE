@@ -18,7 +18,7 @@ export default class AuthController {
             username: req.body.username,
             password: req.body.password
         }
-        const { accessToken, refreshToken } = await this.authService.login(data)
+        const { accessToken, refreshToken, user } = await this.authService.login(data)
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: false,
@@ -28,7 +28,10 @@ export default class AuthController {
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             'Login successfully!',
-            accessToken,
+            {
+                accessToken: accessToken,
+                user: user
+            },
             StatusCodes.OK
         )
         return handleServiceResponse(serviceResponse, res)
@@ -36,7 +39,7 @@ export default class AuthController {
 
     googleLogin = async (req: Request, res: Response) => {
         const user: User = req.user as User
-        const { accessToken, refreshToken } = await this.authService.googleLogin(user)
+        const { refreshToken } = await this.authService.googleLogin(user)
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: false,
@@ -46,10 +49,11 @@ export default class AuthController {
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             'Login successfully!',
-            accessToken,
+            null,
             StatusCodes.OK
         )
-        return handleServiceResponse(serviceResponse, res)
+        // return handleServiceResponse(serviceResponse, res)
+        res.redirect(`${process.env.FRONTEND_BASE_URL}/auth/success`)
     }
 
     register = async (req: Request, res: Response) => {
