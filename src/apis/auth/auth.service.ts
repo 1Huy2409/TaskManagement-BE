@@ -1,3 +1,4 @@
+import { toUserResponse } from './../user/user.mapper';
 import { PostRegisterSchema, RegisterForm } from './schemas/auth.schema';
 import { User } from "@/common/entities/user.entity";
 import { AuthFailureError, BadRequestError, ConflictRequestError, NotFoundError } from "@/common/handler/error.response";
@@ -5,39 +6,38 @@ import { Repository } from "typeorm";
 import { comparePassword, hashPassword } from "@/common/utils/handlePassword";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "@/common/utils/auth.util";
 import { email } from "zod";
-import { toUserResponse } from '../user/user.mapper';
 import { UserResponse } from '../user/schemas';
 import { Request } from 'express';
 export default class AuthService {
     constructor(private userRepository: Repository<User>) { }
 
-    login = async (credentials: { username: string, password: string }): Promise<{ accessToken: string, refreshToken: string }> => {
+    login = async (credentials: { username: string, password: string }): Promise<{ accessToken: string, refreshToken: string, user: UserResponse }> => {
         const { username, password } = credentials
         const user = await this.userRepository.findOne({
             where: { username: username }
         })
         if (!user) {
-            throw new NotFoundError(`Username ${username} is not found!`)
+            throw new AuthFailureError(`Username ${username} is not found!`)
         }
         // call compare password
         const hashedPassword = user.password;
         const verifyPassword = await comparePassword(password, hashedPassword)
         if (!verifyPassword) {
-            throw new BadRequestError(`Password is incorrect!`)
+            throw new AuthFailureError(`Password is incorrect!`)
         }
         const payload = { sub: user.id, username: user.username, email: user.email }
         const accessToken = signAccessToken(payload);
         const refreshToken = signRefreshToken(payload);
-        return { accessToken, refreshToken }
+        const userResponse: UserResponse = toUserResponse(user)
+        return { accessToken, refreshToken, user: userResponse }
     }
-    googleLogin = async (user: User | null): Promise<{ accessToken: string, refreshToken: string }> => {
+    googleLogin = async (user: User | null): Promise<{ refreshToken: string }> => {
         if (!user) {
             throw new NotFoundError('User account was not created!')
         }
         const payload = { sub: user.id, username: user.username, email: user.email }
-        const accessToken = signAccessToken(payload);
         const refreshToken = signRefreshToken(payload);
-        return { accessToken, refreshToken }
+        return { refreshToken }
     }
 
     register = async (registerData: RegisterForm): Promise<UserResponse> => {

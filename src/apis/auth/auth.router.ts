@@ -32,11 +32,11 @@ export default function authRouter(authController: AuthController): Router {
             scope: ["email", "profile"],
             session: false
         })
-    )
+    ) // ==> http://localhost:2409/api/v1/auth/google/callback?code=...
     router.get('/google/callback',
         passport.authenticate('google',
             { failureRedirect: '/login', session: false },
-        ),
+        ), // exchange authorization code for access token
         asyncHandler(authController.googleLogin)
     )
     // end google oauth
