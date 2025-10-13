@@ -11,11 +11,6 @@ import passport from "passport";
 export const authRegistry = new OpenAPIRegistry()
 export default function authRouter(authController: AuthController): Router {
     const router: Router = express.Router()
-    authRegistry.registerComponent('securitySchemes', 'bearerAuth', {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT'
-    });
 
     authRegistry.registerPath({
         method: 'post',

@@ -1,0 +1,206 @@
+import { Router } from "express";
+import WorkspaceController from "./workspace.controller";
+import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
+import { ListWorkspaceResponseSchema, PatchWorkspaceMemberRoleRequest, PatchWorkspaceRequest, PostWorkspaceRequest, WorkspaceResponseSchema } from "./schemas";
+import { asyncHandler } from "@/common/middleware/asyncHandler";
+import passports from "passport";
+import { z } from 'zod'
+import { createApiResponse } from "@/api-docs/openAPIResponseBuilder";
+export const workspaceRegistry = new OpenAPIRegistry()
+workspaceRegistry.register('Workspace', WorkspaceResponseSchema)
+workspaceRegistry.registerComponent('securitySchemes', 'bearerAuth', {
+    type: 'http',
+    scheme: 'bearer',
+    bearerFormat: 'JWT'
+})
+// add more schemas here
+// register your schemas here
+export default function workspaceRouter(workspaceController: WorkspaceController): Router {
+    const router: Router = Router();
+
+    workspaceRegistry.registerPath({
+        method: 'get',
+        path: '/api/v1/workspaces',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
+    })
+    router.get('/',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.findAll)
+    )
+
+    workspaceRegistry.registerPath({
+        method: 'get',
+        path: '/api/v1/workspaces/{id}',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            })
+        },
+        responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
+    })
+    router.get('/:id',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.findById)
+    )
+
+    workspaceRegistry.registerPath({
+        method: 'post',
+        path: '/api/v1/workspaces',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: { body: PostWorkspaceRequest },
+        responses: createApiResponse(WorkspaceResponseSchema, 'Success'),
+    })
+    router.post('/',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.create)
+    )
+
+    workspaceRegistry.registerPath({
+        method: 'patch',
+        path: '/api/v1/workspaces/{id}',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            }),
+            body: PatchWorkspaceRequest
+        },
+        responses: createApiResponse(WorkspaceResponseSchema, 'Success'),
+    })
+    router.patch('/:id',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.update)
+    )
+    // router delete workspace
+    workspaceRegistry.registerPath({
+        method: 'delete',
+        path: '/api/v1/workspaces/{id}',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            })
+        },
+        responses: createApiResponse(WorkspaceResponseSchema, 'Success'),
+    })
+    router.delete('/:id',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.delete)
+    )
+
+    // router get wokspace members
+    workspaceRegistry.registerPath({
+        method: 'get',
+        path: '/api/v1/workspaces/{id}/members',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            })
+        },
+        responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
+    })
+    router.get('/:id/members',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.getWorkspaceMembers)
+    )
+    // router add workspace member
+    workspaceRegistry.registerPath({
+        method: 'post',
+        path: '/api/v1/workspaces/{id}/members',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            })
+        },
+        responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
+    })
+    router.post('/:id/members',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.addMemberToWorkspace)
+    )
+    // router update workspace member role
+    workspaceRegistry.registerPath({
+        method: 'patch',
+        path: '/api/v1/workspaces/{id}/members/{userId}',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                }),
+                userId: z.uuid().openapi({
+                    example: 'b9860e3c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                }),
+            }),
+            body: PatchWorkspaceMemberRoleRequest
+        },
+        responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
+    })
+    router.patch('/:id/members/:userId',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.updateMemberRole)
+    )
+    // router remove workspace member
+    workspaceRegistry.registerPath({
+        method: 'delete',
+        path: '/api/v1/workspaces/{id}/members/{userId}',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                }),
+                userId: z.uuid().openapi({
+                    example: 'b9860e3c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                }),
+            })
+        },
+        responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
+    })
+    router.delete('/:id/members/:userId',
+        passports.authenticate('jwt', { session: false }),
+        asyncHandler(workspaceController.removeMemberFromWorkspace)
+    )
+    return router
+}

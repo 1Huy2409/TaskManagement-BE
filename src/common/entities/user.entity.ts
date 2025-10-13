@@ -2,7 +2,7 @@ import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Up
 import { Comment } from "./comment.entity";
 import { Notification } from "./notification.entity";
 import { DateTimeEntity } from "./base/date-time.entity";
-import { ProjectMember } from "./project-member.entity";
+import { WorkspaceMember } from "./workspace-member.entity";
 import { BoardMember } from "./board-member.entity";
 import { CardMember } from "./card-member.entity";
 
@@ -32,8 +32,8 @@ export class User extends DateTimeEntity {
     @Column({ type: 'boolean', nullable: false, default: true })
     isActive: boolean
 
-    @OneToMany(() => ProjectMember, (projectMember) => projectMember.user)
-    projectMembers: ProjectMember[]
+    @OneToMany(() => WorkspaceMember, (workspaceMember) => workspaceMember.user)
+    workspaceMembers: WorkspaceMember[]
 
     @OneToMany(() => BoardMember, (boardMember) => boardMember.user)
     boardMembers: BoardMember[]

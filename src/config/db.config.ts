@@ -1,8 +1,8 @@
 import { DataSource } from "typeorm";
 import { User } from '../common/entities/user.entity';
 import path from 'path';
-import { Project } from "@/common/entities/project.entity";
-import { ProjectMember } from "@/common/entities/project-member.entity";
+import { Workspace } from "@/common/entities/workspace.entity";
+import { WorkspaceMember } from "@/common/entities/workspace-member.entity";
 import { List } from "@/common/entities/list.entity";
 import { Comment } from "@/common/entities/comment.entity";
 import { Notification } from "@/common/entities/notification.entity";
@@ -20,7 +20,7 @@ export const AppDataSource = new DataSource({
     connectTimeoutMS: 10000,
     synchronize: true,
     logging: true,
-    entities: [User, Project, ProjectMember, Notification, List, Comment, Card, CardMember, Board, BoardMember],
+    entities: [User, Workspace, WorkspaceMember, Notification, List, Comment, Card, CardMember, Board, BoardMember],
     migrations: [path.join(__dirname, '../common/migrations/*.{ts,js}')],
     migrationsRun: true
 })
