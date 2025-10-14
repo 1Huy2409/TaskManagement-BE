@@ -5,11 +5,15 @@ import { Repository } from "typeorm";
 import { CreateWorkspaceSchema, UpdateWorkspaceSchema, WorkspaceResponse } from "./schemas";
 import { toWorkspaceResponse } from "./mapper/workspace.mapper";
 import { WorkspaceMember, WorkspaceMemberRole } from "@/common/entities/workspace-member.entity";
+import { Board } from '@/common/entities/board.entity';
+import { BoardResponse, CreateBoardSchema, UpdateBoardSchema } from '../board/schemas';
+import { toBoardResponse } from '../board/mapper/board.mapper';
 
 export default class WorkspaceService {
     constructor(
         private workspaceRepository: Repository<Workspace>,
-        private workspaceMemberRespository: Repository<WorkspaceMember>
+        private workspaceMemberRespository: Repository<WorkspaceMember>,
+        private boardRepository: Repository<Board>
     ) { }
     // base crud for workspace
     findAll = async (): Promise<WorkspaceResponse[]> => {
@@ -141,6 +145,69 @@ export default class WorkspaceService {
         await this.workspaceMemberRespository.remove(existingMember);
         return {
             message: 'Remove member from workspace successfully!'
+        }
+    }
+    getAllBoardFromWorkspace = async (workspaceId: string): Promise<BoardResponse[]> => {
+        const workspace = await this.workspaceRepository.findOne({ where: { id: workspaceId, isActive: true } });
+        if (!workspace) {
+            throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
+        }
+        const boards = await this.boardRepository.find({
+            where: { workspace: { id: workspaceId }, isActive: true },
+            relations: ['workspace']
+        })
+        if (!boards.length) {
+            throw new NotFoundError(`No boards found in workspace with id ${workspaceId}`);
+        }
+        return boards.map(toBoardResponse);
+    }
+    addBoardToWorkspace = async (workspaceId: string, boardData: CreateBoardSchema): Promise<BoardResponse> => {
+        const workspace = await this.workspaceRepository.findOne({ where: { id: workspaceId, isActive: true } });
+        if (!workspace) {
+            throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
+        }
+        const newBoard = this.boardRepository.create({
+            title: boardData.title,
+            description: boardData.description ?? '',
+            coverUrl: boardData.coverUrl ?? '',
+            visibility: boardData.visibility,
+            workspace: { id: workspaceId }
+        });
+        await this.boardRepository.save(newBoard);
+        return toBoardResponse(newBoard);
+    }
+    updateBoardInWorkspace = async (workspaceId: string, boardId: string, boardData: UpdateBoardSchema): Promise<BoardResponse> => {
+        const workspace = await this.workspaceRepository.findOne({ where: { id: workspaceId, isActive: true } });
+        if (!workspace) {
+            throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
+        }
+        const board = await this.boardRepository.findOne({
+            where: { id: boardId, workspace: { id: workspaceId }, isActive: true },
+            relations: ['workspace']
+        });
+        if (!board) {
+            throw new NotFoundError(`Board with id ${boardId} not found in workspace with id ${workspaceId}`);
+        }
+        board.title = boardData.title ?? board.title;
+        board.description = boardData.description ?? board.description;
+        board.coverUrl = boardData.coverUrl ?? board.coverUrl;
+        board.visibility = boardData.visibility ?? board.visibility;
+        await this.boardRepository.save(board);
+        return toBoardResponse(board);
+    }
+    deleteBoardInWorkspace = async (workspaceId: string, boardId: string): Promise<{ message: string }> => {
+        const workspace = await this.workspaceRepository.findOne({ where: { id: workspaceId, isActive: true } });
+        if (!workspace) {
+            throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
+        }
+        const board = await this.boardRepository.findOne({ where: { id: boardId, workspace: { id: workspaceId }, isActive: true } });
+        if (!board) {
+            throw new NotFoundError(`Board with id ${boardId} not found in workspace with id ${workspaceId}`);
+        }
+        board.isActive = false;
+        await this.boardRepository.save(board);
+        return {
+            message: 'Delete board successfully!'
         }
     }
 }

@@ -26,6 +26,9 @@ export class Board extends DateTimeEntity {
     @Column({ type: 'enum', enum: BoardVisibility, default: BoardVisibility.WORKSPACE })
     visibility: BoardVisibility;
 
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
+
     @ManyToOne(() => Workspace, (workspace) => workspace.boards, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'workspaceId' })
     workspace: Workspace

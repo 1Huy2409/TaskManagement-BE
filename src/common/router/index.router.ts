@@ -15,6 +15,11 @@ import WorkspaceService from '@/apis/workspace/workspace.service'
 import WorkspaceController from '@/apis/workspace/workspace.controller'
 import workspaceRouter from '@/apis/workspace/workspace.router'
 import { WorkspaceMember } from '../entities/workspace-member.entity'
+import { Board } from '../entities/board.entity'
+import { BoardMember } from '../entities/board-member.entity'
+import BoardService from '@/apis/board/board.service'
+import BoardController from '@/apis/board/board.controller'
+import boardRouter from '@/apis/board/board.router'
 
 const mainRouter: Router = express.Router()
 const initHealthCheckModule = () => {
@@ -38,13 +43,23 @@ const initAuthModule = () => {
 const initWorkspaceModule = () => {
     const workspaceRepository = AppDataSource.getRepository(Workspace);
     const workspaceMemberRepository = AppDataSource.getRepository(WorkspaceMember);
-    const workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository);
+    const boardRepository = AppDataSource.getRepository(Board);
+    const workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository, boardRepository);
     const workspaceController = new WorkspaceController(workspaceService);
 
     mainRouter.use('/workspaces', workspaceRouter(workspaceController));
+}
+const initBoardModule = () => {
+    const boardRepository = AppDataSource.getRepository(Board);
+    const boardMemberRepository = AppDataSource.getRepository(BoardMember)
+    const boardService = new BoardService(boardRepository, boardMemberRepository)
+    const boardController = new BoardController(boardService)
+
+    mainRouter.use('/boards', boardRouter(boardController))
 }
 initHealthCheckModule();
 initAuthModule();
 initUserModule();
 initWorkspaceModule();
+initBoardModule();
 export default mainRouter;
