@@ -7,6 +7,11 @@ import { OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-open
 
 export function generateOpenAPIDocument() {
     const registry = new OpenAPIRegistry([userRegistry, healthCheckRegistry, authRegistry, workspaceRegistry, boardRegistry])
+    registry.registerComponent('securitySchemes', 'bearerAuth', {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+    })
     const generator = new OpenApiGeneratorV3(registry.definitions)
     return generator.generateDocument({
         openapi: '3.0.0',

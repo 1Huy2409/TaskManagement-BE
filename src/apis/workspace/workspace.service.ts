@@ -8,12 +8,14 @@ import { WorkspaceMember } from "@/common/entities/workspace-member.entity";
 import { Board } from '@/common/entities/board.entity';
 import { BoardResponse, CreateBoardSchema, UpdateBoardSchema } from '../board/schemas';
 import { toBoardResponse } from '../board/mapper/board.mapper';
+import { Role, RoleScope } from '@/common/entities/role.entity';
 
 export default class WorkspaceService {
     constructor(
         private workspaceRepository: Repository<Workspace>,
         private workspaceMemberRespository: Repository<WorkspaceMember>,
-        private boardRepository: Repository<Board>
+        private boardRepository: Repository<Board>,
+        private roleRepository: Repository<Role>
     ) { }
     // base crud for workspace
     findAll = async (): Promise<WorkspaceResponse[]> => {
@@ -45,11 +47,20 @@ export default class WorkspaceService {
             visibility,
             ownerId
         });
-        // add owner to member
         await this.workspaceRepository.save(newWorkspace);
+        const ownerRole = await this.roleRepository.findOne({
+            where: {
+                name: 'workspace_owner',
+                scope: RoleScope.WORKSPACE
+            }
+        });
+        if (!ownerRole) {
+            throw new NotFoundError('Workspace owner role not found. Please run database migrations.');
+        }
         const newMember = this.workspaceMemberRespository.create({
-            role: WorkspaceMemberRole.OWNER,
+            role: ownerRole,
             user: { id: ownerId },
+            workspace: { id: newWorkspace.id }
         });
         await this.workspaceMemberRespository.save(newMember);
         return toWorkspaceResponse(newWorkspace);
@@ -99,7 +110,7 @@ export default class WorkspaceService {
         return workspaceMember;
     }
     addMemberToWorkspace = async (data: AddWorkspaceMemberSchema, workspaceId: string): Promise<{ message: string }> => {
-        const { userId, role } = data;
+        const { userId, roleId } = data;
         const workspace = await this.workspaceRepository.findOne({ where: { id: workspaceId, isActive: true } });
         if (!workspace) {
             throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
@@ -107,6 +118,12 @@ export default class WorkspaceService {
         const existingMember = await this.workspaceMemberRespository.findOne({ where: { workspace: { id: workspaceId }, user: { id: userId } } });
         if (existingMember) {
             throw new ConflictRequestError('User is already a member of this workspace');
+        }
+        const role = await this.roleRepository.findOne({
+            where: { id: roleId, scope: RoleScope.WORKSPACE }
+        });
+        if (!role) {
+            throw new NotFoundError('Invalid role ID or role is not for workspace');
         }
         const newMember = this.workspaceMemberRespository.create({
             role,
@@ -127,7 +144,16 @@ export default class WorkspaceService {
         if (!existingMember) {
             throw new NotFoundError('User is not a member of this workspace');
         }
-        existingMember.role = data.role;
+
+        // Verify new role exists and is workspace scope
+        const role = await this.roleRepository.findOne({
+            where: { id: data.roleId, scope: RoleScope.WORKSPACE }
+        });
+        if (!role) {
+            throw new NotFoundError('Invalid role ID or role is not for workspace');
+        }
+
+        existingMember.roleId = data.roleId;
         await this.workspaceMemberRespository.save(existingMember);
         return {
             message: 'Update member role successfully!'

@@ -8,6 +8,7 @@ import z from "zod";
 import { LoginResponseSchema, PostLogin, PostRegister } from "./schemas/auth.schema";
 import { asyncHandler } from "@/common/middleware/asyncHandler";
 import passport from "passport";
+import { checkAuthentication } from "@/common/middleware/authentication";
 export const authRegistry = new OpenAPIRegistry()
 export default function authRouter(authController: AuthController): Router {
     const router: Router = express.Router()
@@ -53,7 +54,7 @@ export default function authRouter(authController: AuthController): Router {
         responses: createApiResponse(z.null(), 'Success')
     })
     router.post('/logout',
-        passport.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
         asyncHandler(authController.logout)
     )
 

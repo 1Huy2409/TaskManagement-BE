@@ -4,16 +4,15 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { ListWorkspaceResponseSchema, PatchWorkspaceMemberRoleRequest, PatchWorkspaceRequest, PostWorkspaceMemberRequest, PostWorkspaceRequest, WorkspaceMemberResponseSchema, WorkspaceResponseSchema } from "./schemas";
 import { asyncHandler } from "@/common/middleware/asyncHandler";
 import passports from "passport";
-import { z } from 'zod'
+import { check, z } from 'zod'
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilder";
 import { BoardResponseSchema, ListBoardResponseSchema, PatchBoardRequest, PostBoardRequest } from "../board/schemas";
+import { PERMISSIONS } from "@/common/constants/permissions";
+import { checkBoardPermission, checkWorkspaceOwner, checkWorkspacePermission } from "@/common/middleware/authorization";
+import { checkAuthentication } from "@/common/middleware/authentication";
+
 export const workspaceRegistry = new OpenAPIRegistry()
 workspaceRegistry.register('Workspace', WorkspaceResponseSchema)
-workspaceRegistry.registerComponent('securitySchemes', 'bearerAuth', {
-    type: 'http',
-    scheme: 'bearer',
-    bearerFormat: 'JWT'
-})
 // add more schemas here
 // register your schemas here
 export default function workspaceRouter(workspaceController: WorkspaceController): Router {
@@ -27,7 +26,7 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
     })
     router.get('/',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
         asyncHandler(workspaceController.findAll)
     )
 
@@ -48,7 +47,8 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
     })
     router.get('/:id',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_VIEW)),
         asyncHandler(workspaceController.findById)
     )
 
@@ -61,7 +61,7 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(WorkspaceResponseSchema, 'Success'),
     })
     router.post('/',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
         asyncHandler(workspaceController.create)
     )
 
@@ -83,7 +83,8 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(WorkspaceResponseSchema, 'Success'),
     })
     router.patch('/:id',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_UPDATE)),
         asyncHandler(workspaceController.update)
     )
     // router delete workspace
@@ -104,17 +105,10 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(WorkspaceResponseSchema, 'Success'),
     })
     router.delete('/:id',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_DELETE)),
         asyncHandler(workspaceController.delete)
     )
-
-
-
-
-
-
-
-
 
     // manage members in workspace
     workspaceRegistry.registerPath({
@@ -134,7 +128,8 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
     })
     router.get('/:id/members',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_VIEW_MEMBERS)),
         asyncHandler(workspaceController.getWorkspaceMembers)
     )
 
@@ -156,7 +151,8 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(WorkspaceMemberResponseSchema, 'Success')
     })
     router.post('/:id/members',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_MANAGE_MEMBERS)),
         asyncHandler(workspaceController.addMemberToWorkspace)
     )
 
@@ -183,7 +179,8 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(WorkspaceMemberResponseSchema, 'Success')
     })
     router.patch('/:id/members/:userId',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_MANAGE_MEMBERS)),
         asyncHandler(workspaceController.updateMemberRole)
     )
 
@@ -209,7 +206,8 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(z.null(), 'Success')
     })
     router.delete('/:id/members/:userId',
-        passports.authenticate('jwt', { session: false }),
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_MANAGE_MEMBERS)),
         asyncHandler(workspaceController.removeMemberFromWorkspace)
     )
 
@@ -230,7 +228,10 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         },
         responses: createApiResponse(ListBoardResponseSchema, 'Success')
     })
-    router.get('/:id/boards', asyncHandler(workspaceController.getAllBoardFromWorkspace))
+    router.get('/:id/boards',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.BOARD_VIEW)),
+        asyncHandler(workspaceController.getAllBoardFromWorkspace))
 
     workspaceRegistry.registerPath({
         method: 'post',
@@ -249,7 +250,10 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         },
         responses: createApiResponse(BoardResponseSchema, 'Success')
     })
-    router.post('/:id/boards', asyncHandler(workspaceController.addBoardToWorkspace))
+    router.post('/:id/boards',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.BOARD_CREATE)),
+        asyncHandler(workspaceController.addBoardToWorkspace))
 
     workspaceRegistry.registerPath({
         method: 'patch',
@@ -273,7 +277,10 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         },
         responses: createApiResponse(WorkspaceMemberResponseSchema, 'Success')
     })
-    router.patch('/:id/boards/:boardId', asyncHandler(workspaceController.updateBoardInWorkspace))
+    router.patch('/:id/boards/:boardId',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_UPDATE)),
+        asyncHandler(workspaceController.updateBoardInWorkspace))
 
     workspaceRegistry.registerPath({
         method: 'delete',
@@ -296,6 +303,9 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         },
         responses: createApiResponse(z.null(), 'Success')
     })
-    router.delete('/:id/boards/:boardId', asyncHandler(workspaceController.deleteBoardInWorkspace))
+    router.delete('/:id/boards/:boardId',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_DELETE)),
+        asyncHandler(workspaceController.deleteBoardInWorkspace))
     return router
 }

@@ -7,11 +7,6 @@ import { BoardResponseSchema, ListBoardResponseSchema } from "./schemas";
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilder';
 export const boardRegistry = new OpenAPIRegistry()
 boardRegistry.register('Board', BoardResponseSchema)
-boardRegistry.registerComponent('securitySchemes', 'bearerAuth', {
-    type: 'http',
-    scheme: 'bearer',
-    bearerFormat: 'JWT'
-})
 export default function boardRouter(boardController: BoardController): Router {
     const router: Router = Router()
 
