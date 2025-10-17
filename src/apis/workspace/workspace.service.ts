@@ -4,7 +4,7 @@ import { ConflictRequestError, NotFoundError } from "@/common/handler/error.resp
 import { Repository } from "typeorm";
 import { CreateWorkspaceSchema, UpdateWorkspaceSchema, WorkspaceResponse } from "./schemas";
 import { toWorkspaceResponse } from "./mapper/workspace.mapper";
-import { WorkspaceMember, WorkspaceMemberRole } from "@/common/entities/workspace-member.entity";
+import { WorkspaceMember } from "@/common/entities/workspace-member.entity";
 import { Board } from '@/common/entities/board.entity';
 import { BoardResponse, CreateBoardSchema, UpdateBoardSchema } from '../board/schemas';
 import { toBoardResponse } from '../board/mapper/board.mapper';

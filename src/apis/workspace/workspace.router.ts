@@ -108,6 +108,14 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         asyncHandler(workspaceController.delete)
     )
 
+
+
+
+
+
+
+
+
     // manage members in workspace
     workspaceRegistry.registerPath({
         method: 'get',

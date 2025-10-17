@@ -1,19 +1,18 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi, ZodRequestBody } from '@asteasolutions/zod-to-openapi';
-import { BoardMemberRole } from '@/common/entities/board-member.entity';
 
 export const AddBoardMemberSchema = z.object({
     userId: z.uuid().openapi({ description: 'ID of the user to be added', example: '123e4567-e89b-12d3-a456-426614174000' }),
-    role: z.enum(BoardMemberRole).openapi({ example: BoardMemberRole.MEMBER, description: 'Role of the user in the board' }),
+    roleId: z.uuid().openapi({ example: '981e4557-e89b-12d3-a456-426614174000' })
 })
 export const UpdateBoardMemberRoleSchema = z.object({
-    role: z.enum(BoardMemberRole).openapi({ example: BoardMemberRole.MEMBER, description: 'Role of the user in the board' }),
+    roleId: z.uuid().openapi({ example: '981e4557-e89b-12d3-a456-426614174000' })
 })
 export const PostBoardMemberRequest: ZodRequestBody = {
     description: 'Add a member to the board',
     content: {
         'application/json': {
-            schema: AddBoardMemberSchema.openapi({ example: { userId: '123e4567-e89b-12d3-a456-426614174000', role: BoardMemberRole.MEMBER } })
+            schema: AddBoardMemberSchema.openapi({ example: { userId: '123e4567-e89b-12d3-a456-426614174000', roleId: '981e4557-e89b-12d3-a456-426614174000' } })
         }
     }
 }
@@ -21,7 +20,7 @@ export const PatchBoardMemberRequest: ZodRequestBody = {
     description: 'Update a member role in the board',
     content: {
         'application/json': {
-            schema: UpdateBoardMemberRoleSchema.openapi({ example: { role: BoardMemberRole.MEMBER } })
+            schema: UpdateBoardMemberRoleSchema.openapi({ example: { roleId: '981e4557-e89b-12d3-a456-426614174000' } })
         }
     }
 }

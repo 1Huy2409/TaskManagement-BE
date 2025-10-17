@@ -29,6 +29,9 @@ export class Board extends DateTimeEntity {
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
 
+    @Column({ type: 'uuid', nullable: true })
+    createdBy: string
+
     @ManyToOne(() => Workspace, (workspace) => workspace.boards, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'workspaceId' })
     workspace: Workspace
