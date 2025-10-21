@@ -1,6 +1,7 @@
 import express from 'express'
 import type { Router } from 'express'
 import { User } from '../entities/user.entity'
+import { Workspace } from '../entities/workspace.entity'
 import UserController from '@/apis/user/user.controller'
 import UserService from '@/apis/user/user.service'
 import userRouter from '@/apis/user/user.router'
@@ -10,6 +11,16 @@ import HealthCheckController from '@/apis/healthcheck/healthcheck.controller'
 import AuthService from '@/apis/auth/auth.service'
 import AuthController from '@/apis/auth/auth.controller'
 import authRouter from '@/apis/auth/auth.router'
+import WorkspaceService from '@/apis/workspace/workspace.service'
+import WorkspaceController from '@/apis/workspace/workspace.controller'
+import workspaceRouter from '@/apis/workspace/workspace.router'
+import { WorkspaceMember } from '../entities/workspace-member.entity'
+import { Board } from '../entities/board.entity'
+import { BoardMember } from '../entities/board-member.entity'
+import BoardService from '@/apis/board/board.service'
+import BoardController from '@/apis/board/board.controller'
+import boardRouter from '@/apis/board/board.router'
+import { Role } from '../entities/role.entity'
 
 const mainRouter: Router = express.Router()
 const initHealthCheckModule = () => {
@@ -30,7 +41,27 @@ const initAuthModule = () => {
 
     mainRouter.use('/auth', authRouter(authController))
 }
+const initWorkspaceModule = () => {
+    const workspaceRepository = AppDataSource.getRepository(Workspace);
+    const workspaceMemberRepository = AppDataSource.getRepository(WorkspaceMember);
+    const boardRepository = AppDataSource.getRepository(Board);
+    const roleRepository = AppDataSource.getRepository(Role);
+    const workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository, boardRepository, roleRepository);
+    const workspaceController = new WorkspaceController(workspaceService);
+
+    mainRouter.use('/workspaces', workspaceRouter(workspaceController));
+}
+const initBoardModule = () => {
+    const boardRepository = AppDataSource.getRepository(Board);
+    const boardMemberRepository = AppDataSource.getRepository(BoardMember)
+    const boardService = new BoardService(boardRepository, boardMemberRepository)
+    const boardController = new BoardController(boardService)
+
+    mainRouter.use('/boards', boardRouter(boardController))
+}
 initHealthCheckModule();
 initAuthModule();
 initUserModule();
+initWorkspaceModule();
+initBoardModule();
 export default mainRouter;

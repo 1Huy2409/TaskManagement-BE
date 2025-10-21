@@ -10,7 +10,10 @@
     "test:ui": "vitest --ui",
     "test:dev": "vitest dev",
     "test:cov": "vitest run --coverage",
-    "test:ci": "vitest run --coverage --reporter=verbose"
+    "test:ci": "vitest run --coverage --reporter=verbose",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "npm run typeorm -- migration:generate",
+    "migration:run": "npm run typeorm -- migration:run -d src/config/db.config.ts"
   },
   "keywords": [],
   "author": "",

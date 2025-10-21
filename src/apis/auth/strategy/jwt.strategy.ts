@@ -7,9 +7,9 @@ const userRepository = AppDataSource.getRepository(User);
 passport.use(new JwtStrategy({
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     secretOrKey: process.env.ACCESS_SECRET_KEY!,
-}, function (jwt_payload, done) {
+}, async function (jwt_payload, done) {
     try {
-        const user = userRepository.findOne({
+        const user = await userRepository.findOne({
             where: { id: jwt_payload.sub }
         })
         if (!user) {

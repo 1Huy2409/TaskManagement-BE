@@ -1,12 +1,13 @@
 import jwt from 'jsonwebtoken'
 import { config } from "dotenv";
 import { BadRequestError } from '../handler/error.response';
-config()
-export const signAccessToken = (data: any): string => {
 
+config()
+
+export const signAccessToken = (data: any): string => {
     const token: string = jwt.sign(data, process.env.ACCESS_SECRET_KEY!, {
-        algorithm: "HS256",
-        expiresIn: parseInt(process.env.ACCESS_TOKEN_EXPIRE!)
+        algorithm: 'HS256',
+        expiresIn: '1h'
     })
     return token;
 }
@@ -20,11 +21,12 @@ export const verifyAccessToken = (token: string): any => {
         throw new BadRequestError('Access token is invalid!')
     }
 }
+
 export const signRefreshToken = (data: any): string => {
 
     const token: string = jwt.sign(data, process.env.REFRESH_SECRET_KEY!, {
         algorithm: "HS256",
-        expiresIn: parseInt(process.env.REFRESH_TOKEN_EXPIRE!)
+        expiresIn: '7d'
     })
     return token;
 }
