@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { email, z } from 'zod'
 import { extendZodWithOpenApi, ZodRequestBody } from '@asteasolutions/zod-to-openapi';
 
 extendZodWithOpenApi(z);
@@ -32,3 +32,58 @@ export const PostRegister: ZodRequestBody = {
         }
     }
 }
+
+
+export const RequestOTPSchema = z.object({
+    email: z.email().openapi({ example: 'nguyenvana2409@gmail.com' })
+})
+export const RequestOTPResponseSchema = z.object({
+    email: z.email(),
+    message: z.string()
+})
+export const PostRequestOTP = {
+    content: {
+        'application/json': {
+            schema: RequestOTPSchema
+        }
+    }
+};
+// Step 2: Verify OTP
+export const VerifyOTPSchema = z.object({
+    email: z.email(),
+    otp: z.string().length(6)
+});
+
+export const VerifyOTPResponseSchema = z.object({
+    email: z.email(),
+    message: z.string()
+});
+
+export const PostVerifyOTP = {
+    content: {
+        'application/json': {
+            schema: VerifyOTPSchema
+        }
+    }
+};
+
+// Step 3: Complete Registration
+export const CompleteRegisterSchema = z.object({
+    email: z.email(),
+    fullname: z.string().min(1),
+    username: z.string().min(3),
+    password: z.string().min(6)
+});
+
+export const PostCompleteRegister = {
+    content: {
+        'application/json': {
+            schema: CompleteRegisterSchema
+        }
+    }
+};
+
+export type RequestOTPForm = z.infer<typeof RequestOTPSchema>;
+export type RequestOTPResponse = z.infer<typeof RequestOTPResponseSchema>;
+export type VerifyOTPForm = z.infer<typeof VerifyOTPSchema>;
+export type CompleteRegisterForm = z.infer<typeof CompleteRegisterSchema>;

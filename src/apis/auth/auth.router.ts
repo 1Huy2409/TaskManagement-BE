@@ -5,7 +5,7 @@ import { Router } from "express";
 import express from 'express'
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilder";
 import z from "zod";
-import { LoginResponseSchema, PostLogin, PostRegister } from "./schemas/auth.schema";
+import { LoginResponseSchema, PostCompleteRegister, PostLogin, PostRegister, PostRequestOTP, PostVerifyOTP, RequestOTPResponseSchema, VerifyOTPResponseSchema } from "./schemas/auth.schema";
 import { asyncHandler } from "@/common/middleware/asyncHandler";
 import passport from "passport";
 import { checkAuthentication } from "@/common/middleware/authentication";
@@ -39,12 +39,30 @@ export default function authRouter(authController: AuthController): Router {
 
     authRegistry.registerPath({
         method: 'post',
-        path: '/api/v1/auth/register',
+        path: '/api/v1/auth/request-otp',
         tags: ['Auth'],
-        request: { body: PostRegister },
+        request: { body: PostRequestOTP },
+        responses: createApiResponse(RequestOTPResponseSchema, 'Success')
+    })
+    router.post('/request-otp', asyncHandler(authController.requestOTP))
+
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/v1/auth/verify-otp',
+        tags: ['Auth'],
+        request: { body: PostVerifyOTP },
+        responses: createApiResponse(VerifyOTPResponseSchema, 'Success')
+    })
+    router.post('/verify-otp', asyncHandler(authController.verifyOTP))
+
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/v1/auth/complete-register',
+        tags: ['Auth'],
+        request: { body: PostCompleteRegister },
         responses: createApiResponse(UserResponseSchema, 'Success')
     })
-    router.post('/register', asyncHandler(authController.register))
+    router.post('/complete-register', asyncHandler(authController.completeRegister))
 
     authRegistry.registerPath({
         method: 'post',

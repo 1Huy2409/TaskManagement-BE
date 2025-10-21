@@ -21,6 +21,7 @@ import BoardService from '@/apis/board/board.service'
 import BoardController from '@/apis/board/board.controller'
 import boardRouter from '@/apis/board/board.router'
 import { Role } from '../entities/role.entity'
+import { Otp } from '../entities/otp.entity'
 
 const mainRouter: Router = express.Router()
 const initHealthCheckModule = () => {
@@ -36,7 +37,8 @@ const initUserModule = () => {
 }
 const initAuthModule = () => {
     const userRepository = AppDataSource.getRepository(User);
-    const authService = new AuthService(userRepository);
+    const otpRepository = AppDataSource.getRepository(Otp);
+    const authService = new AuthService(userRepository, otpRepository);
     const authController = new AuthController(authService);
 
     mainRouter.use('/auth', authRouter(authController))

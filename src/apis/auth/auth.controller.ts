@@ -5,7 +5,7 @@ import { handleServiceResponse } from "@/common/utils/httpHandler";
 import { ResponseStatus, ServiceResponse } from "@/common/models/service.response";
 import { StatusCodes } from "http-status-codes";
 import { User } from "@/common/entities/user.entity";
-import { RegisterForm } from "./schemas/auth.schema";
+import { CompleteRegisterForm, RegisterForm, RequestOTPForm, VerifyOTPForm } from "./schemas/auth.schema";
 import { AuthFailureError } from '@/common/handler/error.response';
 
 export default class AuthController {
@@ -43,7 +43,7 @@ export default class AuthController {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: false,
-            sameSite: "strict",
+            // sameSite: "none",
             expires: new Date(Date.now() + 365 * 24 * 3600000)
         })
         const serviceResponse = new ServiceResponse(
@@ -53,19 +53,42 @@ export default class AuthController {
             StatusCodes.OK
         )
         // return handleServiceResponse(serviceResponse, res)
-        res.redirect(`${process.env.FRONTEND_BASE_URL}/auth/success`)
+        res.redirect(`${process.env.FRONTEND_BASE_URL}/TaskManagement-FE/#/oauth/success`)
     }
 
-    register = async (req: Request, res: Response) => {
-        const registerData: RegisterForm = req.body;
-        const newUser = await this.authService.register(registerData)
+    requestOTP = async (req: Request, res: Response) => {
+        const data: RequestOTPForm = req.body;
+        const result = await this.authService.requestOTP(data);
+
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
-            'Register successfully!',
+            result.message,
+            { email: result.email },
+            StatusCodes.OK
+        );
+        return handleServiceResponse(serviceResponse, res);
+    }
+    verifyOTP = async (req: Request, res: Response) => {
+        const data: VerifyOTPForm = req.body;
+        const result = await this.authService.verifyOTP(data);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            result.message,
+            { email: result.email },
+            StatusCodes.OK
+        );
+        return handleServiceResponse(serviceResponse, res);
+    }
+    completeRegister = async (req: Request, res: Response) => {
+        const data: CompleteRegisterForm = req.body;
+        const newUser = await this.authService.completeRegister(data);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Register completed successfully!',
             newUser,
-            StatusCodes.CREATED
-        )
-        return handleServiceResponse(serviceResponse, res)
+            StatusCodes.OK
+        );
+        return handleServiceResponse(serviceResponse, res);
     }
 
     refreshToken = async (req: Request, res: Response) => {
@@ -74,13 +97,15 @@ export default class AuthController {
         res.cookie("refreshToken", newRefreshToken, {
             httpOnly: true,
             secure: false,
-            sameSite: "strict",
+            // sameSite: "none",
             expires: new Date(Date.now() + 365 * 24 * 3600000)
         })
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             'Refresh token successfully!',
-            newAccessToken,
+            {
+                accessToken: newAccessToken
+            },
             StatusCodes.OK
         )
         return handleServiceResponse(serviceResponse, res)
