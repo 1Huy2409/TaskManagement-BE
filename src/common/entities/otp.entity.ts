@@ -17,6 +17,6 @@ export class Otp {
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @Column()
+    @Column({ type: 'timestamp' })
     expiresAt: Date;
 }

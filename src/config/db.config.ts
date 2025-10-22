@@ -13,6 +13,7 @@ import { BoardMember } from "../common/entities/board-member.entity";
 import { Role } from "../common/entities/role.entity";
 import { Permission } from "../common/entities/permission.entity";
 import { RolePermission } from "../common/entities/role-permission.entity";
+import { Otp } from "@/common/entities/otp.entity";
 export const AppDataSource = new DataSource({
     type: 'postgres',
     host: process.env.POSTGRES_HOST || 'postgres',
@@ -21,9 +22,9 @@ export const AppDataSource = new DataSource({
     password: process.env.POSTGRES_PASSWORD || 'postgres_password',
     database: process.env.POSTGRES_DB || 'postgres_database',
     connectTimeoutMS: 10000,
-    synchronize: false,
+    synchronize: true,
     logging: true,
-    entities: [User, Workspace, WorkspaceMember, Notification, List, Comment, Card, CardMember, Board, BoardMember, Role, Permission, RolePermission],
+    entities: [User, Workspace, WorkspaceMember, Notification, List, Comment, Card, CardMember, Board, BoardMember, Role, Permission, RolePermission, Otp],
     migrations: [path.join(__dirname, '../common/migrations/*.{ts,js}')],
     migrationsRun: false
 })
