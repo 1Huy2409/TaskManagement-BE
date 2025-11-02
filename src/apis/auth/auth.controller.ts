@@ -18,6 +18,7 @@ export default class AuthController {
             username: req.body.username,
             password: req.body.password
         }
+        console.log(data)
         const { accessToken, refreshToken, user } = await this.authService.login(data)
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
@@ -124,5 +125,17 @@ export default class AuthController {
             StatusCodes.OK
         )
         return handleServiceResponse(serviceResponse, res)
+    }
+
+    verifyToken = async (req: Request, res: Response) => {
+        // Middleware authenticateToken đã verify token rồi
+        // Nếu đến đây nghĩa là token hợp lệ
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Token is valid',
+            { valid: true },
+            StatusCodes.OK
+        );
+        return handleServiceResponse(serviceResponse, res);
     }
 }

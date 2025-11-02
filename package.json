@@ -12,8 +12,14 @@
     "test:cov": "vitest run --coverage",
     "test:ci": "vitest run --coverage --reporter=verbose",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:generate": "npm run typeorm -- migration:generate",
-    "migration:run": "npm run typeorm -- migration:run -d src/config/db.config.ts"
+    "docker:dev:build": "docker-compose -f docker-compose.dev.yml build",
+    "docker:dev:up": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "migration:generate": "npm run typeorm -- migration:generate -d src/config/db.config.ts",
+    "migration:create": "npm run typeorm -- migration:create",
+    "migration:run": "npm run typeorm -- migration:run -d src/config/db.config.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/config/db.config.ts",
+    "migration:show": "npm run typeorm -- migration:show -d src/config/db.config.ts"
   },
   "keywords": [],
   "author": "",

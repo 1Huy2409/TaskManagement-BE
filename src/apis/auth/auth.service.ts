@@ -19,12 +19,14 @@ export default class AuthService {
 
     login = async (credentials: { username: string, password: string }): Promise<{ accessToken: string, refreshToken: string, user: UserResponse }> => {
         const { username, password } = credentials
+        console.log(username);
         const user = await this.userRepository.findOne({
             where: { username: username }
         })
         if (!user) {
             throw new AuthFailureError(`Username ${username} is not found!`)
         }
+        console.log('User found for login:', user);
         // call compare password
         const hashedPassword = user.password;
         const verifyPassword = await comparePassword(password, hashedPassword)

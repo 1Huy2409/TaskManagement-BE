@@ -83,5 +83,18 @@ export default function authRouter(authController: AuthController): Router {
         responses: createApiResponse(z.null(), 'Success')
     })
     router.post('/processNewToken', asyncHandler(authController.refreshToken))
+
+    authRegistry.registerPath({
+        method: 'get',
+        path: '/api/v1/auth/verify',
+        tags: ['Auth'],
+        security: [{ bearerAuth: [] }],
+        responses: createApiResponse(z.object({ valid: z.boolean() }), 'Success')
+    })
+    router.get('/verify',
+        asyncHandler(checkAuthentication),
+        asyncHandler(authController.verifyToken)
+    )
+
     return router
 }

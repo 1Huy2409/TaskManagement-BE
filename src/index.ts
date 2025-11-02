@@ -1,7 +1,8 @@
 import "reflect-metadata"
+import { config } from "dotenv";
+config();
 import express from "express";
 import cors from 'cors';
-import { config } from "dotenv";
 import type { Request, Response } from "express";
 import { AppDataSource } from "./config/db.config";
 import { buildOpenAPIRouter } from "./api-docs/openAPIRouter";
@@ -12,13 +13,14 @@ import session from "express-session";
 import "./apis/auth/strategy/google.strategy";
 import "./apis/auth/strategy/jwt.strategy";
 import cookieParser from "cookie-parser";
-config();
+
 const port = parseInt(process.env.PORT || '8000');
 const app = express();
-app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
-}))
+// app.use(cors({
+//     origin: 'http://localhost:5173',
+//     credentials: true
+// }))
+app.use(cors())
 app.use(cookieParser())
 app.use(express.json())
 app.use(session({

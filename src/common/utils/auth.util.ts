@@ -7,7 +7,7 @@ config()
 export const signAccessToken = (data: any): string => {
     const token: string = jwt.sign(data, process.env.ACCESS_SECRET_KEY!, {
         algorithm: 'HS256',
-        expiresIn: '1h'
+        expiresIn: '30s'
     })
     return token;
 }
@@ -26,7 +26,7 @@ export const signRefreshToken = (data: any): string => {
 
     const token: string = jwt.sign(data, process.env.REFRESH_SECRET_KEY!, {
         algorithm: "HS256",
-        expiresIn: '7d'
+        expiresIn: '1m'
     })
     return token;
 }

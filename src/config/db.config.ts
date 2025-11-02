@@ -14,6 +14,8 @@ import { Role } from "../common/entities/role.entity";
 import { Permission } from "../common/entities/permission.entity";
 import { RolePermission } from "../common/entities/role-permission.entity";
 import { Otp } from "@/common/entities/otp.entity";
+import { config } from "dotenv";
+config();
 export const AppDataSource = new DataSource({
     type: 'postgres',
     host: process.env.POSTGRES_HOST || 'postgres',
