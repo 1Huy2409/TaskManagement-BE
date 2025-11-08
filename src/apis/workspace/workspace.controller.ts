@@ -13,7 +13,11 @@ export default class WorkspaceController {
     ) { }
 
     findAll = async (req: Request, res: Response) => {
-        const workspaces = await this.workspaceService.findAll();
+        const userId = req.user?.id;
+        if (!userId) {
+            throw new AuthFailureError('Authentication failure');
+        }
+        const workspaces = await this.workspaceService.findAll(userId);
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             'Get all workspaces successfully',
@@ -141,7 +145,7 @@ export default class WorkspaceController {
     }
     getAllBoardFromWorkspace = async (req: Request, res: Response) => {
         const { id } = req.params;
-        console.log(id)
+        console.log("Workspace ID:", id);
         if (!id) {
             throw new BadRequestError('Workspace id is required');
         }

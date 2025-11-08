@@ -5,7 +5,7 @@ import { Repository } from "typeorm";
 import { CreateWorkspaceSchema, UpdateWorkspaceSchema, WorkspaceResponse } from "./schemas";
 import { toWorkspaceResponse } from "./mapper/workspace.mapper";
 import { WorkspaceMember } from "@/common/entities/workspace-member.entity";
-import { Board } from '@/common/entities/board.entity';
+import { Board, BoardVisibility } from '@/common/entities/board.entity';
 import { BoardResponse, CreateBoardSchema, UpdateBoardSchema } from '../board/schemas';
 import { toBoardResponse } from '../board/mapper/board.mapper';
 import { Role, RoleScope } from '@/common/entities/role.entity';
@@ -18,14 +18,33 @@ export default class WorkspaceService {
         private roleRepository: Repository<Role>
     ) { }
     // base crud for workspace
-    findAll = async (): Promise<WorkspaceResponse[]> => {
-        const workspaces = await this.workspaceRepository.find({
-            where: { isActive: true },
+    findAll = async (userId: string): Promise<WorkspaceResponse[]> => {
+        const workspaceMembers = await this.workspaceMemberRespository.find({
+            where: { user: { id: userId } },
+            relations: ['workspace'],
+            select: {
+                workspace: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    visibility: true,
+                    ownerId: true,
+                    isActive: true,
+                    created_at: true,
+                    updated_at: true
+                }
+            }
         });
-        if (!workspaces.length) {
-            throw new NotFoundError('No workspaces found');
+        if (!workspaceMembers.length) {
+            throw new NotFoundError('No workspaces found for this user');
         }
-        return workspaces.map(toWorkspaceResponse);
+        const activeWorkspaces = workspaceMembers
+            .map(member => member.workspace)
+            .filter(workspace => workspace.isActive);
+        if (!activeWorkspaces.length) {
+            throw new NotFoundError('No active workspaces found for this user');
+        }
+        return activeWorkspaces.map(toWorkspaceResponse);
     }
     findById = async (id: string): Promise<WorkspaceResponse> => {
         const workspace = await this.workspaceRepository.findOne({ where: { id, isActive: true } });
@@ -179,12 +198,8 @@ export default class WorkspaceService {
             throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
         }
         const boards = await this.boardRepository.find({
-            where: { workspace: { id: workspaceId }, isActive: true },
-            relations: ['workspace']
+            where: { workspaceId: workspaceId, isActive: true }
         })
-        if (!boards.length) {
-            throw new NotFoundError(`No boards found in workspace with id ${workspaceId}`);
-        }
         return boards.map(toBoardResponse);
     }
     addBoardToWorkspace = async (workspaceId: string, boardData: CreateBoardSchema): Promise<BoardResponse> => {
@@ -196,7 +211,7 @@ export default class WorkspaceService {
             title: boardData.title,
             description: boardData.description ?? '',
             coverUrl: boardData.coverUrl ?? '',
-            visibility: boardData.visibility,
+            visibility: boardData.visibility ?? BoardVisibility.WORKSPACE,
             workspace: { id: workspaceId }
         });
         await this.boardRepository.save(newBoard);

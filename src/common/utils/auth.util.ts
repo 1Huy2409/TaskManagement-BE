@@ -1,14 +1,18 @@
-import jwt from 'jsonwebtoken'
+import jwt, { type SignOptions } from 'jsonwebtoken'
 import { config } from "dotenv";
 import { BadRequestError } from '../handler/error.response';
 
 config()
 
 export const signAccessToken = (data: any): string => {
-    const token: string = jwt.sign(data, process.env.ACCESS_SECRET_KEY!, {
-        algorithm: 'HS256',
-        expiresIn: '30s'
-    })
+    const token: string = jwt.sign(
+        data,
+        process.env.ACCESS_SECRET_KEY!,
+        {
+            algorithm: 'HS256',
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRE || '1d'
+        } as any
+    )
     return token;
 }
 
@@ -23,11 +27,14 @@ export const verifyAccessToken = (token: string): any => {
 }
 
 export const signRefreshToken = (data: any): string => {
-
-    const token: string = jwt.sign(data, process.env.REFRESH_SECRET_KEY!, {
-        algorithm: "HS256",
-        expiresIn: '1m'
-    })
+    const token: string = jwt.sign(
+        data,
+        process.env.REFRESH_SECRET_KEY!,
+        {
+            algorithm: "HS256",
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRE || '7d'
+        } as any
+    )
     return token;
 }
 
