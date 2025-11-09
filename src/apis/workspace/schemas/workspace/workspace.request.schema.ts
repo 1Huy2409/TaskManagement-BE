@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi, ZodRequestBody } from '@asteasolutions/zod-to-openapi';
+import { WorkspaceStatus } from '@/common/entities/workspace.entity';
 
 extendZodWithOpenApi(z);
 
@@ -22,6 +23,7 @@ export const UpdateWorkspaceSchema = z.object({
     title: z.string().min(1).max(100).optional().openapi({ description: 'Title of the workspace', example: 'My Updated Workspace' }),
     description: z.string().max(500).optional().openapi({ description: 'Description of the workspace', example: 'This is my updated workspace' }),
     visibility: z.boolean().optional().openapi({ description: 'Whether the workspace is private', example: true }),
+    status: z.enum(WorkspaceStatus).optional().openapi({ description: 'Status of the workspace', example: WorkspaceStatus.ACTIVE }),
 })
 
 export const PatchWorkspaceRequest: ZodRequestBody = {

@@ -6,6 +6,7 @@ export const toWorkspaceResponse = (workspace: Workspace): WorkspaceResponse => 
     title: workspace.title,
     description: workspace.description,
     visibility: workspace.visibility,
+    status: workspace.status,
     ownerId: workspace.ownerId,
     created_at: workspace.created_at,
     updated_at: workspace.updated_at,

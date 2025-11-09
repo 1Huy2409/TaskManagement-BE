@@ -71,10 +71,11 @@ export default class WorkspaceService {
                 throw new ConflictRequestError('Workspace with this title already exists');
             }
             workspace.title = title;
-            workspace.description = rest.description ?? workspace.description;
-            workspace.visibility = rest.visibility ?? workspace.visibility;
-            await this.workspaceRepository.update(id, workspace);
         }
+        workspace.description = rest.description ?? workspace.description;
+        workspace.visibility = rest.visibility ?? workspace.visibility;
+        workspace.status = rest.status ?? workspace.status;
+        await this.workspaceRepository.update(id, workspace);
         return toWorkspaceResponse(workspace);
     }
     delete = async (id: string, ownerId: string): Promise<{ message: string }> => {

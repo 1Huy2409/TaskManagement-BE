@@ -4,6 +4,10 @@ import { Board } from "./board.entity";
 import { WorkspaceMember } from "./workspace-member.entity";
 import { User } from "./user.entity";
 
+export enum WorkspaceStatus {
+    ACTIVE = 'active',
+    ARCHIVED = 'archived',
+}
 @Entity('workspaces')
 export class Workspace extends DateTimeEntity {
     @PrimaryGeneratedColumn('uuid')
@@ -17,6 +21,13 @@ export class Workspace extends DateTimeEntity {
 
     @Column({ type: 'boolean', default: false })
     visibility: boolean
+
+    @Column({
+        type: 'enum',
+        enum: WorkspaceStatus,
+        default: WorkspaceStatus.ACTIVE,
+    })
+    status: WorkspaceStatus
 
     @Column({ type: 'boolean', default: true })
     isActive: boolean
