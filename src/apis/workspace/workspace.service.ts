@@ -47,11 +47,11 @@ export default class WorkspaceService {
             ownerId
         });
 
-        const ownerRole = await this.roleRepository.findByName('workspace-owner', RoleScope.WORKSPACE);
+        const ownerRole = await this.roleRepository.findByName('workspace_owner', RoleScope.WORKSPACE);
         if (!ownerRole) {
             throw new NotFoundError('Workspace owner role not found. Please run database migrations.');
         }
-        const newMember = await this.workspaceMemberRespository.create({
+        await this.workspaceMemberRespository.create({
             role: ownerRole,
             userId: ownerId,
             workspaceId: newWorkspace.id
@@ -112,7 +112,7 @@ export default class WorkspaceService {
         if (!role) {
             throw new NotFoundError('Invalid role ID or role is not for workspace');
         }
-        const newMember = this.workspaceMemberRespository.create({
+        await this.workspaceMemberRespository.create({
             role,
             userId,
             workspaceId

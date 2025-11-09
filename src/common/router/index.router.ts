@@ -41,7 +41,7 @@ const initUserModule = () => {
 
     mainRouter.use('/users', userRouter(userController));
 }
-// need fix
+// need fixing
 const initAuthModule = () => {
     const userRepository = AppDataSource.getRepository(User);
     const otpRepository = AppDataSource.getRepository(Otp);

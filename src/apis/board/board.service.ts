@@ -1,6 +1,3 @@
-import { BoardMember } from "@/common/entities/board-member.entity";
-import { Board, BoardVisibility } from "@/common/entities/board.entity";
-import { Repository } from "typeorm";
 import { BoardResponse } from "./schemas";
 import { NotFoundError } from "@/common/handler/error.response";
 import { toBoardResponse } from "./mapper/board.mapper";

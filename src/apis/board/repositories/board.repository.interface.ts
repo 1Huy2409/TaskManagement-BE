@@ -9,5 +9,5 @@ export interface IBoardRepository extends IBaseRepository<Board> {
     findBoardByWorkspaceId(id: string, workspaceId: string): Promise<Board | null>;
     create(data: Partial<Board>): Promise<Board>;
     update(id: string, data: Partial<Board>): Promise<Board>;
-    delete(id: string): Promise<void>;
+    delete(id: string): Promise<any>;
 }
