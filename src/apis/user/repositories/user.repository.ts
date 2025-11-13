@@ -1,6 +1,6 @@
 import type { IUserRepository } from "@/apis/user/repositories/user.repository.interface";
 import { User } from "@/common/entities/user.entity";
-import { Repository } from "typeorm";
+import { Not, Repository } from "typeorm";
 export class UserRepository implements IUserRepository {
     constructor(
         private readonly userRepository: Repository<User>
@@ -11,6 +11,18 @@ export class UserRepository implements IUserRepository {
 
     async findByUsername(username: string): Promise<User | null> {
         return await this.userRepository.findOne({ where: { username } });
+    }
+
+    async findByUsernameExceptId(username: string, excludeId: string): Promise<User | null> {
+        if (excludeId === '') {
+            return await this.userRepository.findOne({ where: { username } });
+        }
+        return await this.userRepository.findOne({
+            where: {
+                username,
+                id: Not(excludeId)
+            }
+        })
     }
 
     async findById(id: string): Promise<User | null> {

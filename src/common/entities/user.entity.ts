@@ -32,6 +32,9 @@ export class User extends DateTimeEntity {
     @Column({ type: 'boolean', nullable: false, default: true })
     isActive: boolean
 
+    @Column({ type: 'boolean', nullable: false, default: false })
+    isVerified: boolean
+
     @OneToMany(() => WorkspaceMember, (workspaceMember) => workspaceMember.user)
     workspaceMembers: WorkspaceMember[]
 

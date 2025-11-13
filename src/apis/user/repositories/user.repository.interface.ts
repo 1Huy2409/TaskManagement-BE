@@ -4,6 +4,7 @@ import { IBaseRepository } from "@/common/repositories/base.repository.interface
 export interface IUserRepository extends IBaseRepository<User> {
     findByEmail(email: string): Promise<User | null>;
     findByUsername(username: string): Promise<User | null>;
+    findByUsernameExceptId(username: string, excludeId: string): Promise<User | null>;
     findById(id: string): Promise<User | null>;
     findAll(): Promise<User[]>;
     create(data: Partial<User>): Promise<User>;
