@@ -21,12 +21,27 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         path: '/api/v1/workspaces',
         tags: ['Workspace'],
         security: [{ bearerAuth: [] }],
+        parameters: [
+            {
+                name: 'status',
+                in: 'query',
+                required: false,
+                schema: {
+                    type: 'string',
+                    enum: ['active', 'archived']
+                },
+                description: 'Filter workspace by status'
+            }
+        ],
         responses: createApiResponse(ListWorkspaceResponseSchema, 'Success')
-    })
+    });
+
     router.get('/',
         asyncHandler(checkAuthentication),
         asyncHandler(workspaceController.findAll)
     )
+
+
 
     workspaceRegistry.registerPath({
         method: 'get',
@@ -61,6 +76,55 @@ export default function workspaceRouter(workspaceController: WorkspaceController
     router.post('/',
         asyncHandler(checkAuthentication),
         asyncHandler(workspaceController.create)
+    )
+
+    workspaceRegistry.registerPath({
+        method: 'patch',
+        path: '/api/v1/workspaces/{id}/archive',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            }),
+        },
+        responses: createApiResponse(z.object({
+            message: z.string(),
+            workspace: WorkspaceResponseSchema
+        }), 'Success'),
+    })
+    router.patch('/:id/archive',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_UPDATE)),
+        asyncHandler(workspaceController.archive)
+    )
+    workspaceRegistry.registerPath({
+        method: 'patch',
+        path: '/api/v1/workspaces/{id}/reopen',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            }),
+        },
+        responses: createApiResponse(z.object({
+            message: z.string(),
+            workspace: WorkspaceResponseSchema
+        }), 'Success'),
+    })
+    router.patch('/:id/reopen',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_UPDATE)),
+        asyncHandler(workspaceController.reopen)
     )
 
     workspaceRegistry.registerPath({

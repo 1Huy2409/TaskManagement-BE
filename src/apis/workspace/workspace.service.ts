@@ -1,5 +1,5 @@
 import { AddWorkspaceMemberSchema, UpdateWorkspaceMemberRoleSchema } from './schemas/workspace-member/workspace-member.request.schema';
-import { Workspace } from "@/common/entities/workspace.entity";
+import { Workspace, WorkspaceStatus } from "@/common/entities/workspace.entity";
 import { ConflictRequestError, NotFoundError } from "@/common/handler/error.response";
 import { Repository } from "typeorm";
 import { CreateWorkspaceSchema, UpdateWorkspaceSchema, WorkspaceMemberResponse, WorkspaceResponse } from "./schemas";
@@ -26,6 +26,10 @@ export default class WorkspaceService {
     findAll = async (userId: string): Promise<WorkspaceResponse[]> => {
         const workspaces = await this.workspaceRepository.findByUserId(userId);
         return workspaces.map(toWorkspaceResponse);
+    }
+    findAllArchived = async (userId: string): Promise<WorkspaceResponse[]> => {
+        const archivedWorkspaces = await this.workspaceRepository.findArchivedByOwnerId(userId);
+        return archivedWorkspaces.map(toWorkspaceResponse);
     }
     findById = async (id: string): Promise<WorkspaceResponse> => {
         const workspace = await this.workspaceRepository.findById(id);
@@ -83,7 +87,43 @@ export default class WorkspaceService {
         await this.workspaceRepository.update(id, workspace);
         return { message, workspace: toWorkspaceResponse(workspace) };
     }
+    archive = async (id: string): Promise<{ message: string, workspace: WorkspaceResponse }> => {
+        const workspace = await this.workspaceRepository.findById(id);
+        if (!workspace) {
+            throw new NotFoundError(`Workspace with id ${id} not found`);
+        }
+        if (workspace.status === WorkspaceStatus.ARCHIVED) {
+            return {
+                message: 'No changes detected',
+                workspace: toWorkspaceResponse(workspace)
+            }
+        }
+        workspace.status = WorkspaceStatus.ARCHIVED;
+        await this.workspaceRepository.update(id, workspace);
+        return {
+            message: 'Workspace archived successfully',
+            workspace: toWorkspaceResponse(workspace)
+        }
+    }
 
+    reopen = async (id: string): Promise<{ message: string, workspace: WorkspaceResponse }> => {
+        const workspace = await this.workspaceRepository.findById(id);
+        if (!workspace) {
+            throw new NotFoundError(`Workspace with id ${id} not found`);
+        }
+        if (workspace.status === WorkspaceStatus.ACTIVE) {
+            return {
+                message: 'No changes detected',
+                workspace: toWorkspaceResponse(workspace)
+            }
+        }
+        workspace.status = WorkspaceStatus.ACTIVE;
+        await this.workspaceRepository.update(id, workspace);
+        return {
+            message: 'Workspace reopened successfully',
+            workspace: toWorkspaceResponse(workspace)
+        }
+    }
     delete = async (id: string, ownerId: string): Promise<{ message: string }> => {
         const workspace = await this.workspaceRepository.findOneByOwnerId(id, ownerId);
         if (!workspace) {

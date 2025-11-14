@@ -1,4 +1,4 @@
-import { Workspace } from "@/common/entities/workspace.entity";
+import { Workspace, WorkspaceStatus } from "@/common/entities/workspace.entity";
 import { Repository } from "typeorm";
 import { IWorkspaceRepository } from "./workspace.repository.interface";
 import { NotFoundError } from "@/common/handler/error.response";
@@ -37,10 +37,25 @@ export class WorkspaceRepository implements IWorkspaceRepository {
             .leftJoinAndSelect('workspace.boards', 'boards')
             .where('workspaceMember.userId = :userId', { userId })
             .andWhere('workspace.isActive = :isActive', { isActive: true })
+            .andWhere('workspace.status = :status', { status: WorkspaceStatus.ACTIVE })
             .orderBy('workspace.created_at', 'DESC')
             .getMany();
     }
-
+    async findArchivedByOwnerId(userId: string): Promise<Workspace[]> {
+        return this.workspaceRepository
+            .createQueryBuilder('workspace')
+            .innerJoin('workspace.workspaceMembers', 'workspaceMember')
+            .leftJoinAndSelect('workspace.owner', 'owner')
+            .leftJoinAndSelect('workspace.workspaceMembers', 'workspaceMembers')
+            .leftJoinAndSelect('workspaceMembers.user', 'user')
+            .leftJoinAndSelect('workspaceMembers.role', 'role')
+            .leftJoinAndSelect('workspace.boards', 'boards')
+            .where('workspaceMember.userId = :userId', { userId })
+            .andWhere('workspace.isActive = :isActive', { isActive: true })
+            .andWhere('workspace.status = :status', { status: WorkspaceStatus.ARCHIVED })
+            .orderBy('workspace.created_at', 'DESC')
+            .getMany();
+    }
 
 
     async findById(id: string): Promise<Workspace | null> {
