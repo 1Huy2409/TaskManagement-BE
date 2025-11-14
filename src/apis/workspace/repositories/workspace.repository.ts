@@ -16,11 +16,11 @@ export class WorkspaceRepository implements IWorkspaceRepository {
     }
 
     async findByName(name: string, ownerId: string): Promise<Workspace | null> {
-        return await this.workspaceRepository.findOne({ where: { title: name, ownerId }, relations: ['owner', 'workspaceMembers', 'boards'] });
+        return await this.workspaceRepository.findOne({ where: { title: name, ownerId }, relations: ['owner', 'workspaceMembers', 'boards', 'workspaceMembers.user', 'workspaceMembers.role'] });
     }
 
     async findByOwnerId(ownerId: string): Promise<Workspace[]> {
-        return this.workspaceRepository.find({ where: { ownerId: ownerId, isActive: true }, relations: ['owner', 'workspaceMembers', 'boards'] });
+        return this.workspaceRepository.find({ where: { ownerId: ownerId, isActive: true }, relations: ['owner', 'workspaceMembers', 'boards', 'workspaceMembers.user', 'workspaceMembers.role'] });
     }
     async findOneByOwnerId(id: string, ownerId: string): Promise<Workspace | null> {
         return this.workspaceRepository.findOne({ where: { id, ownerId, isActive: true }, relations: ['owner', 'workspaceMembers', 'boards', 'workspaceMembers.user', 'workspaceMembers.role'] });
@@ -44,7 +44,7 @@ export class WorkspaceRepository implements IWorkspaceRepository {
 
 
     async findById(id: string): Promise<Workspace | null> {
-        return await this.workspaceRepository.findOne({ where: { id, isActive: true }, relations: ['owner', 'workspaceMembers', 'boards'] });
+        return await this.workspaceRepository.findOne({ where: { id, isActive: true }, relations: ['owner', 'workspaceMembers', 'boards', 'workspaceMembers.user', 'workspaceMembers.role'] });
     }
 
     async create(data: Partial<Workspace>): Promise<Workspace> {

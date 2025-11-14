@@ -59,13 +59,18 @@ export default class WorkspaceService {
         });
         return toWorkspaceResponse(newWorkspace);
     }
-    update = async (data: UpdateWorkspaceSchema, id: string): Promise<WorkspaceResponse> => {
+    update = async (data: UpdateWorkspaceSchema, id: string): Promise<{ message: string, workspace: WorkspaceResponse }> => {
         const { title, ...rest } = data;
         const workspace = await this.workspaceRepository.findById(id);
         if (!workspace) {
             throw new NotFoundError(`Workspace with id ${id} not found`);
         }
-
+        // set flag handle isChange?
+        const isChange = ((title && title !== workspace.title) || (rest.description && rest.description !== workspace.description) || (rest.visibility && rest.visibility !== workspace.visibility));
+        const message: string = isChange ? 'Workspace updated successfully' : 'No changes detected';
+        if (!isChange) {
+            return { message, workspace: toWorkspaceResponse(workspace) };
+        }
         if (title && title !== workspace.title) {
             const existingWorkspace = await this.workspaceRepository.findByName(title, workspace.ownerId);
             if (existingWorkspace) {
@@ -75,9 +80,8 @@ export default class WorkspaceService {
         }
         workspace.description = rest.description ?? workspace.description;
         workspace.visibility = rest.visibility ?? workspace.visibility;
-        workspace.status = rest.status ?? workspace.status;
         await this.workspaceRepository.update(id, workspace);
-        return toWorkspaceResponse(workspace);
+        return { message, workspace: toWorkspaceResponse(workspace) };
     }
     // remake this api deeper (for board,...)
     delete = async (id: string, ownerId: string): Promise<{ message: string }> => {
