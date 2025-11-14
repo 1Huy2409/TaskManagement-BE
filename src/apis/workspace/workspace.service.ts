@@ -83,7 +83,7 @@ export default class WorkspaceService {
         await this.workspaceRepository.update(id, workspace);
         return { message, workspace: toWorkspaceResponse(workspace) };
     }
-    // remake this api deeper (for board,...)
+
     delete = async (id: string, ownerId: string): Promise<{ message: string }> => {
         const workspace = await this.workspaceRepository.findOneByOwnerId(id, ownerId);
         if (!workspace) {
@@ -98,7 +98,6 @@ export default class WorkspaceService {
         }
     }
 
-    // advance crud for workspace
     getWorkspaceMembers = async (id: string): Promise<WorkspaceMemberResponse[]> => {
         const workspaceMember = await this.workspaceMemberRespository.findByWorkspaceId(id);
         if (!workspaceMember.length) {
@@ -106,6 +105,8 @@ export default class WorkspaceService {
         }
         return workspaceMember.map(toWorkspaceMemberResponse);
     }
+
+    // need remaking
     addMemberToWorkspace = async (data: AddWorkspaceMemberSchema, workspaceId: string): Promise<{ message: string }> => {
         const { userId, roleId } = data;
         const workspace = await this.workspaceRepository.findById(workspaceId);
@@ -130,32 +131,49 @@ export default class WorkspaceService {
             message: 'Add member to workspace successfully!'
         }
     }
-    updateMemberRole = async (workspaceId: string, userId: string, data: UpdateWorkspaceMemberRoleSchema): Promise<{ message: string }> => {
+    updateMemberRole = async (workspaceId: string, userId: string, data: UpdateWorkspaceMemberRoleSchema, currentUserId: string): Promise<{ message: string, member: WorkspaceMemberResponse }> => {
         const workspace = await this.workspaceRepository.findById(workspaceId);
         if (!workspace) {
             throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
+        }
+        if (currentUserId === userId) {
+            throw new ConflictRequestError('Cannot change role of the workspace yourself');
         }
         const existingMember = await this.workspaceMemberRespository.findByWorkspaceAndUserId(workspaceId, userId);
         if (!existingMember) {
             throw new NotFoundError('User is not a member of this workspace');
         }
 
-        // Verify new role exists and is workspace scope
+        const isChange = existingMember.roleId !== data.roleId;
+        if (!isChange) {
+            return {
+                message: 'No changes detected',
+                member: toWorkspaceMemberResponse(existingMember)
+            }
+        }
         const role = await this.roleRepository.findById(data.roleId, RoleScope.WORKSPACE);
         if (!role) {
             throw new NotFoundError('Invalid role ID or role is not for workspace');
         }
-
+        console.log("Role to assign:", role.name);
+        if (role.name === 'workspace_owner') {
+            throw new ConflictRequestError('Cannot assign workspace owner role to another member');
+        }
         existingMember.roleId = data.roleId;
-        await this.workspaceMemberRespository.update(existingMember.id, existingMember);
+        existingMember.role = role;
+        const updatedMember: WorkspaceMember = await this.workspaceMemberRespository.update(existingMember.id, existingMember);
         return {
-            message: 'Update member role successfully!'
+            message: 'Update member role successfully!',
+            member: toWorkspaceMemberResponse(updatedMember)
         }
     }
     removeMemberFromWorkspace = async (workspaceId: string, userId: string): Promise<{ message: string }> => {
         const workspace = await this.workspaceRepository.findById(workspaceId);
         if (!workspace) {
             throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
+        }
+        if (workspace.ownerId === userId) {
+            throw new ConflictRequestError('Cannot remove the owner from the workspace');
         }
         const existingMember = await this.workspaceMemberRespository.findByWorkspaceAndUserId(workspaceId, userId);
         if (!existingMember) {
@@ -166,6 +184,7 @@ export default class WorkspaceService {
             message: 'Remove member from workspace successfully!'
         }
     }
+    // board management in workspace
     getAllBoardFromWorkspace = async (workspaceId: string): Promise<BoardResponse[]> => {
         const workspace = await this.workspaceRepository.findById(workspaceId);
         if (!workspace) {

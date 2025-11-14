@@ -30,7 +30,12 @@ export class WorkspaceMemberRepository implements IWorkspaceMemberRepository {
         return await this.workspaceMemberRepository.save(workspaceMember);
     }
     async update(id: string, data: Partial<WorkspaceMember>): Promise<WorkspaceMember> {
-        return await this.workspaceMemberRepository.save({ id, ...data });
+        await this.workspaceMemberRepository.save({ id, ...data });
+        const updatedMember = await this.workspaceMemberRepository.findOne({ where: { id }, relations: ['user', 'workspace', 'role'] });
+        if (!updatedMember) {
+            throw new Error('WorkspaceMember not found after update');
+        }
+        return updatedMember;
     }
     async delete(workspaceMember: WorkspaceMember): Promise<void> {
         await this.workspaceMemberRepository.remove(workspaceMember);

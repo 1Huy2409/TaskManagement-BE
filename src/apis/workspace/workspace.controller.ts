@@ -115,12 +115,16 @@ export default class WorkspaceController {
         return handleServiceResponse(serviceResponse, res);
     }
     updateMemberRole = async (req: Request, res: Response) => {
+        const user = req.user;
+        if (!user) {
+            throw new AuthFailureError('Authentication failure');
+        }
         const { id, userId } = req.params;
         if (!id || !userId) {
             throw new BadRequestError('Workspace id and User id are required');
         }
         const data: UpdateWorkspaceMemberRoleSchema = req.body;
-        const message = await this.workspaceService.updateMemberRole(id, userId, data);
+        const message = await this.workspaceService.updateMemberRole(id, userId, data, user.id);
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             'Update member role successfully',
