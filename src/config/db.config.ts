@@ -13,7 +13,6 @@ import { BoardMember } from "../common/entities/board-member.entity";
 import { Role } from "../common/entities/role.entity";
 import { Permission } from "../common/entities/permission.entity";
 import { RolePermission } from "../common/entities/role-permission.entity";
-import { Otp } from "@/common/entities/otp.entity";
 import { config } from "dotenv";
 config();
 export const AppDataSource = new DataSource({
@@ -26,7 +25,7 @@ export const AppDataSource = new DataSource({
     connectTimeoutMS: 10000,
     synchronize: true,
     logging: true,
-    entities: [User, Workspace, WorkspaceMember, Notification, List, Comment, Card, CardMember, Board, BoardMember, Role, Permission, RolePermission, Otp],
+    entities: [User, Workspace, WorkspaceMember, Notification, List, Comment, Card, CardMember, Board, BoardMember, Role, Permission, RolePermission],
     migrations: [path.join(__dirname, '../common/migrations/*.{ts,js}')],
     migrationsRun: false
 })
