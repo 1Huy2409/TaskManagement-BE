@@ -1,12 +1,13 @@
 import { authRegistry } from "@/apis/auth/auth.router";
 import { boardRegistry } from "@/apis/board/board.router";
 import { healthCheckRegistry } from "@/apis/healthcheck/healthcheck.router";
+import { joinLinkRegistry } from "@/apis/joinlink/join-link.router";
 import { userRegistry } from "@/apis/user/user.router";
 import { workspaceRegistry } from "@/apis/workspace/workspace.router";
 import { OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 
 export function generateOpenAPIDocument() {
-    const registry = new OpenAPIRegistry([userRegistry, healthCheckRegistry, authRegistry, workspaceRegistry, boardRegistry])
+    const registry = new OpenAPIRegistry([userRegistry, healthCheckRegistry, authRegistry, workspaceRegistry, boardRegistry, joinLinkRegistry])
     registry.registerComponent('securitySchemes', 'bearerAuth', {
         type: 'http',
         scheme: 'bearer',

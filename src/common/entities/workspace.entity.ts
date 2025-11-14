@@ -3,6 +3,7 @@ import { DateTimeEntity } from "./base/date-time.entity";
 import { Board } from "./board.entity";
 import { WorkspaceMember } from "./workspace-member.entity";
 import { User } from "./user.entity";
+import { WorkspaceJoinLink } from "./workspace-join-link.entity";
 
 export enum WorkspaceStatus {
     ACTIVE = 'active',
@@ -38,6 +39,9 @@ export class Workspace extends DateTimeEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'ownerId' })
     owner: User
+
+    @OneToMany(() => WorkspaceJoinLink, (joinLink) => joinLink.workspace)
+    joinLinks: WorkspaceJoinLink[]
 
     @OneToMany(() => WorkspaceMember, (workspaceMember) => workspaceMember.workspace)
     workspaceMembers: WorkspaceMember[]
