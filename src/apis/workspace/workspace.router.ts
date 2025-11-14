@@ -3,8 +3,7 @@ import WorkspaceController from "./workspace.controller";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { ListWorkspaceResponseSchema, PatchWorkspaceMemberRoleRequest, PatchWorkspaceRequest, PostWorkspaceMemberRequest, PostWorkspaceRequest, WorkspaceMemberResponseSchema, WorkspaceResponseSchema } from "./schemas";
 import { asyncHandler } from "@/common/middleware/asyncHandler";
-import passports from "passport";
-import { check, z } from 'zod'
+import { z } from 'zod'
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilder";
 import { BoardResponseSchema, ListBoardResponseSchema, PatchBoardRequest, PostBoardRequest } from "../board/schemas";
 import { PERMISSIONS } from "@/common/constants/permissions";
@@ -13,8 +12,7 @@ import { checkAuthentication } from "@/common/middleware/authentication";
 
 export const workspaceRegistry = new OpenAPIRegistry()
 workspaceRegistry.register('Workspace', WorkspaceResponseSchema)
-// add more schemas here
-// register your schemas here
+
 export default function workspaceRouter(workspaceController: WorkspaceController): Router {
     const router: Router = Router();
 

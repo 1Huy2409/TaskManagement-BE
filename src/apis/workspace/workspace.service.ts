@@ -2,7 +2,7 @@ import { AddWorkspaceMemberSchema, UpdateWorkspaceMemberRoleSchema } from './sch
 import { Workspace } from "@/common/entities/workspace.entity";
 import { ConflictRequestError, NotFoundError } from "@/common/handler/error.response";
 import { Repository } from "typeorm";
-import { CreateWorkspaceSchema, UpdateWorkspaceSchema, WorkspaceResponse } from "./schemas";
+import { CreateWorkspaceSchema, UpdateWorkspaceSchema, WorkspaceMemberResponse, WorkspaceResponse } from "./schemas";
 import { toWorkspaceResponse } from "./mapper/workspace.mapper";
 import { WorkspaceMember } from "@/common/entities/workspace-member.entity";
 import { Board, BoardVisibility } from '@/common/entities/board.entity';
@@ -13,6 +13,7 @@ import { IWorkspaceRepository } from './repositories/workspace.repository.interf
 import { IWorkspaceMemberRepository } from './repositories/workspace-member.repository.interface';
 import { IBoardRepository } from '../board/repositories/board.repository.interface';
 import { IRoleRepository } from '../role/repositories/role.repository.interface';
+import { toWorkspaceMemberResponse } from './mapper/workspace-member.mapper';
 
 export default class WorkspaceService {
     constructor(
@@ -49,7 +50,7 @@ export default class WorkspaceService {
 
         const ownerRole = await this.roleRepository.findByName('workspace_owner', RoleScope.WORKSPACE);
         if (!ownerRole) {
-            throw new NotFoundError('Workspace owner role not found. Please run database migrations.');
+            throw new NotFoundError('Workspace owner role not found!');
         }
         await this.workspaceMemberRespository.create({
             role: ownerRole,
@@ -78,6 +79,7 @@ export default class WorkspaceService {
         await this.workspaceRepository.update(id, workspace);
         return toWorkspaceResponse(workspace);
     }
+    // remake this api deeper (for board,...)
     delete = async (id: string, ownerId: string): Promise<{ message: string }> => {
         const workspace = await this.workspaceRepository.findOneByOwnerId(id, ownerId);
         if (!workspace) {
@@ -92,12 +94,12 @@ export default class WorkspaceService {
     }
 
     // advance crud for workspace
-    getWorkspaceMembers = async (id: string): Promise<any> => {
+    getWorkspaceMembers = async (id: string): Promise<WorkspaceMemberResponse[]> => {
         const workspaceMember = await this.workspaceMemberRespository.findByWorkspaceId(id);
         if (!workspaceMember.length) {
             throw new NotFoundError(`No members found in workspace with id ${id}`);
         }
-        return workspaceMember;
+        return workspaceMember.map(toWorkspaceMemberResponse);
     }
     addMemberToWorkspace = async (data: AddWorkspaceMemberSchema, workspaceId: string): Promise<{ message: string }> => {
         const { userId, roleId } = data;
@@ -118,6 +120,7 @@ export default class WorkspaceService {
             userId,
             workspaceId
         });
+        // should return current list member after add
         return {
             message: 'Add member to workspace successfully!'
         }
