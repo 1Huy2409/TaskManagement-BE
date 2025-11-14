@@ -91,6 +91,7 @@ export default class WorkspaceService {
         }
         // update status
         workspace.isActive = false;
+        workspace.boards.forEach(board => board.isActive = false);
         await this.workspaceRepository.update(id, workspace);
         return {
             message: 'Delete workspace successfully!'
