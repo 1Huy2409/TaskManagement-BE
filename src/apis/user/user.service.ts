@@ -1,7 +1,4 @@
-import { UserResponse } from "./schemas";
-import type { Repository } from "typeorm";
-// import { User } from "@/common/entities/user.entity";
-// import { NotFoundError } from "@/common/handler/error.response";
+import { PatchUserProfileRequest, UserResponse } from "./schemas";
 import { User } from "@/common/entities/user.entity";
 import { NotFoundError } from "@/common/handler/error.response";
 import { toUserResponse } from "./user.mapper";
@@ -25,5 +22,21 @@ export default class UserService {
             throw new NotFoundError(`User with ID ${id} is not found!`)
         }
         return toUserResponse(user)
+    }
+
+    updateProfile = async (id: string, payload: PatchUserProfileRequest): Promise<UserResponse> => {
+        const existing = await this.userRepository.findById(id);
+        if (!existing) {
+            throw new NotFoundError(`User with ID ${id} is not found!`);
+        }
+
+        const updateData: Partial<User> = {
+            ...payload
+        };
+
+        
+
+        const updated = await this.userRepository.update(id, updateData);
+        return toUserResponse(updated);
     }
 }

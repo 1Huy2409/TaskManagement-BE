@@ -6,6 +6,7 @@ export const toUserResponse = (user: User): UserResponse => ({
   fullname: user.fullname,
   username: user.username,
   email: user.email,
+  description: user.description,
   isActive: user.isActive,
   createdAt: user.created_at,
   updatedAt: user.updated_at,

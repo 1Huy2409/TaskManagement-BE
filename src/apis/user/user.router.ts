@@ -1,7 +1,7 @@
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { Router } from 'express'
 import { z } from 'zod'
-import { UserResponseSchema, ListUserResponseSchema } from "./schemas";
+import { UserResponseSchema, ListUserResponseSchema, PatchUserProfileRequest } from "./schemas";
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilder";
 import { asyncHandler } from "@/common/middleware/asyncHandler";
 import UserController from "./user.controller";
@@ -18,6 +18,25 @@ export default function userRouter(userController: UserController): Router {
     });
 
     router.get('/', asyncHandler(userController.findAll));
+
+    userRegistry.registerPath({
+        method: 'patch',
+        path: '/api/v1/users/{id}/profile',
+        tags: ['User'],
+        request: {
+            params: z.object({
+                id: z.string().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'User UUID',
+                    format: 'uuid'
+                })
+            }),
+            body: PatchUserProfileRequest
+        },
+        responses: createApiResponse(UserResponseSchema, 'Success')
+    });
+
+    router.patch('/:id/profile', asyncHandler(userController.updateProfile));
 
     userRegistry.registerPath({
         method: 'get',
