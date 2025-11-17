@@ -29,6 +29,10 @@ export class User extends DateTimeEntity {
     @Column({ type: 'varchar', length: 255, nullable: true })
     avatarUrl: string
 
+
+    @Column({ type: 'text', nullable: true })
+    description?: string
+
     @Column({ type: 'boolean', nullable: false, default: true })
     isActive: boolean
 

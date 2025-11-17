@@ -1,11 +1,10 @@
-import { UserResponse } from "./schemas";
-import type { Repository } from "typeorm";
-// import { User } from "@/common/entities/user.entity";
-// import { NotFoundError } from "@/common/handler/error.response";
+import type { Express } from "express";
+import { PatchUserProfileRequest, UserResponse } from "./schemas";
 import { User } from "@/common/entities/user.entity";
-import { NotFoundError } from "@/common/handler/error.response";
+import { BadRequestError, NotFoundError } from "@/common/handler/error.response";
 import { toUserResponse } from "./user.mapper";
 import { IUserRepository } from "./repositories/user.repository.interface";
+import { uploadImageBuffer } from "@/common/services/cloudinary.service";
 
 export default class UserService {
     constructor(
@@ -25,5 +24,34 @@ export default class UserService {
             throw new NotFoundError(`User with ID ${id} is not found!`)
         }
         return toUserResponse(user)
+    }
+
+    updateProfile = async (id: string, payload: PatchUserProfileRequest): Promise<UserResponse> => {
+        const existing = await this.userRepository.findById(id);
+        if (!existing) {
+            throw new NotFoundError(`User with ID ${id} is not found!`);
+        }
+
+        const updateData: Partial<User> = {
+            ...payload
+        };
+
+
+        const updated = await this.userRepository.update(id, updateData);
+        return toUserResponse(updated);
+    }
+
+    uploadAvatar = async (id: string, file: Express.Multer.File): Promise<UserResponse> => {
+        const user = await this.userRepository.findById(id);
+        if (!user) {
+            throw new NotFoundError(`User with ID ${id} is not found!`);
+        }
+        if (!file) {
+            throw new BadRequestError('Avatar file is required');
+        }
+
+        const result = await uploadImageBuffer(file, { folder: 'avatars', public_id: `user-${id}`, overwrite: true });
+        const updated = await this.userRepository.update(id, { avatarUrl: result.secure_url });
+        return toUserResponse(updated);
     }
 }
