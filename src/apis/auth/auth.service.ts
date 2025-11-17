@@ -1,3 +1,5 @@
+import redisClient  from '@/config/redis.config';
+
 import { toUserResponse } from './../user/user.mapper';
 import { CompleteRegisterForm, PostRegisterSchema, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm } from './schemas/auth.schema';
 import { User } from "@/common/entities/user.entity";
@@ -11,6 +13,10 @@ import { UserResponse } from '../user/schemas';
 import { Request } from 'express';
 import { EmailService } from '@/common/utils/mailService';
 import { Otp } from '@/common/entities/otp.entity';
+interface OtpRedisData {
+    otp: string;
+    isVerified: boolean;
+}
 export default class AuthService {
     private emailService: EmailService
     constructor(private userRepository: Repository<User>, private otpRepository: Repository<Otp>) {
@@ -59,13 +65,15 @@ export default class AuthService {
             throw new ConflictRequestError(`This email exist in this application!`)
         }
         const otp = crypto.randomInt(100000, 999999).toString();
-        await this.otpRepository.delete({ email: email });
-        const newOtpEntity = this.otpRepository.create({
-            email: email,
+       // 2. Dùng Redis key thay vì DB
+        const redisKey = `otp:${email}`;
+        
+        // Lưu OTP và trạng thái chưa xác thực
+        const otpData: OtpRedisData = {
             otp: otp,
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now
-        });
-        await this.otpRepository.save(newOtpEntity);
+            isVerified: false
+        };
+      await redisClient.set(redisKey, JSON.stringify(otpData), 'EX', 300);
         await this.emailService.sendOTP(email, otp);
 
         return {
@@ -75,21 +83,18 @@ export default class AuthService {
     }
     verifyOTP = async (data: VerifyOTPForm): Promise<{ email: string, message: string }> => {
         const { email, otp } = data;
-        const otpEntity = await this.otpRepository.findOne({
-            where: {
-                email: email,
-                otp: otp,
-                isVerified: false,
-            }
-        })
-        if (!otpEntity) {
-            throw new BadRequestError('Invalid OTP!')
+       const redisKey = `otp:${email}`;
+        const dataStr = await redisClient.get(redisKey);
+        if (!dataStr) {
+            throw new BadRequestError('OTP has expired or does not exist!');
         }
-        if (otpEntity.expiresAt < new Date()) {
-            throw new BadRequestError('OTP has expired!')
+
+        const otpData: OtpRedisData = JSON.parse(dataStr);
+        if (otpData.otp !== otp) {
+            throw new BadRequestError('Invalid OTP!');
         }
-        otpEntity.isVerified = true;
-        await this.otpRepository.save(otpEntity);
+        otpData.isVerified = true;
+        await redisClient.set(redisKey, JSON.stringify(otpData), 'EX', 600);
         return {
             email,
             message: 'OTP verified successfully.'
@@ -98,14 +103,15 @@ export default class AuthService {
 
     completeRegister = async (data: CompleteRegisterForm): Promise<UserResponse> => {
         const { email, fullname, username, password } = data;
-        const otpEntity = await this.otpRepository.findOne({
-            where: {
-                email: email,
-                isVerified: true
-            }
-        });
-        if (!otpEntity) {
-            throw new BadRequestError('Email not verified!')
+        const redisKey = `otp:${email}`;
+        const dataStr = await redisClient.get(redisKey);
+        if(!dataStr) {
+            throw new BadRequestError('OTP has expired or does not exist!');
+        }
+        const otpData: OtpRedisData = JSON.parse(dataStr);
+
+        if (otpData.isVerified !== true) {
+            throw new BadRequestError('Email not verified!');
         }
         const existingUsername = await this.userRepository.findOne({
             where: { username: username }
@@ -120,6 +126,7 @@ export default class AuthService {
             password: await hashPassword(password)
         })
         await this.userRepository.save(newUser)
+        await redisClient.del(redisKey);
         return toUserResponse(newUser);
     }
 
