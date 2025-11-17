@@ -58,8 +58,8 @@ export default class AuthController {
     }
 
     requestOTP = async (req: Request, res: Response) => {
-        const data: RequestOTPForm = req.body;
-        const result = await this.authService.requestOTP(data);
+        const data: RegisterForm = req.body;
+        const result = await this.authService.register(data);
 
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
@@ -71,7 +71,7 @@ export default class AuthController {
     }
     verifyOTP = async (req: Request, res: Response) => {
         const data: VerifyOTPForm = req.body;
-        const result = await this.authService.verifyOTP(data);
+        const result = await this.authService.verifyEmail(data);
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             result.message,
@@ -116,17 +116,8 @@ export default class AuthController {
         );
         return handleServiceResponse(serviceResponse, res);
     }
-    completeRegister = async (req: Request, res: Response) => {
-        const data: CompleteRegisterForm = req.body;
-        const newUser = await this.authService.completeRegister(data);
-        const serviceResponse = new ServiceResponse(
-            ResponseStatus.Sucess,
-            'Register completed successfully!',
-            newUser,
-            StatusCodes.OK
-        );
-        return handleServiceResponse(serviceResponse, res);
-    }
+   
+    
 
     refreshToken = async (req: Request, res: Response) => {
         const { newAccessToken, newRefreshToken } = await this.authService.refreshToken(req)

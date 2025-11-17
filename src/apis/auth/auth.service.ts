@@ -3,32 +3,32 @@ import redisClient  from '@/config/redis.config';
 import { toUserResponse } from './../user/user.mapper';
 import { CompleteRegisterForm, PostRegisterSchema, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm, ResetPasswordForm } from './schemas/auth.schema';
 import { User } from "@/common/entities/user.entity";
-import { AuthFailureError, BadRequestError, ConflictRequestError, NotFoundError } from "@/common/handler/error.response";
-import { MoreThan, Repository } from "typeorm";
+import { AuthFailureError, BadRequestError, ConflictRequestError, NotFoundError } from "@/common/handler/error.response";;
 import { comparePassword, hashPassword } from "@/common/utils/handlePassword";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "@/common/utils/auth.util";
-import { email } from "zod";
 import crypto from 'crypto';
 import { UserResponse } from '../user/schemas';
 import { Request } from 'express';
 import { EmailService } from '@/common/utils/mailService';
-import { Otp } from '@/common/entities/otp.entity';
+
+import { IUserRepository } from '../user/repositories/user.repository.interface';
+import { OtpService } from '@/common/utils/otpService';
 interface OtpRedisData {
     otp: string;
     isVerified: boolean;
 }
 export default class AuthService {
     private emailService: EmailService
-    constructor(private userRepository: Repository<User>, private otpRepository: Repository<Otp>) {
+    private otpService: OtpService
+    constructor(private userRepository: IUserRepository) {
         this.emailService = new EmailService();
+        this.otpService = new OtpService()
     }
 
     login = async (credentials: { username: string, password: string }): Promise<{ accessToken: string, refreshToken: string, user: UserResponse }> => {
         const { username, password } = credentials
         console.log(username);
-        const user = await this.userRepository.findOne({
-            where: { username: username }
-        })
+        const user = await this.userRepository.findByUsername(username);
         if (!user) {
             throw new AuthFailureError(`Username ${username} is not found!`)
         }
@@ -45,6 +45,72 @@ export default class AuthService {
         const userResponse: UserResponse = toUserResponse(user)
         return { accessToken, refreshToken, user: userResponse }
     }
+    register = async (userData: RegisterForm): Promise<RequestOTPResponse> => {
+        const { fullname, username, email, password } = userData;
+        const existingUserByEmail = await this.userRepository.findByEmail(email);
+        if (existingUserByEmail) {
+            if (existingUserByEmail.isVerified) {
+                throw new ConflictRequestError(`Email ${email} is already in use.`);
+            }
+            const canResendOtp = await this.otpService.canResendOTP(email);
+            if (!canResendOtp) {
+                throw new BadRequestError('OTP was sent recently. Please wait before requesting a new one.');
+            }
+        }
+        const existingUserByUsername = await this.userRepository.findByUsernameExceptId(username, existingUserByEmail ? existingUserByEmail.id : '');
+        if (existingUserByUsername) {
+            throw new ConflictRequestError(`Username ${username} is already in use.`);
+        }
+        await this.userRepository.create({
+            fullname,
+            username,
+            email,
+            password: await hashPassword(password),
+        })
+        // always generate and send OTP
+        const otp = this.otpService.generateOTP();
+        await this.otpService.saveOTP(email, otp);
+        await this.emailService.sendOTP(email, otp);
+        return {
+            email,
+            message: 'OTP has been sent to your email address.'
+        }
+    }
+
+    verifyEmail = async (data: VerifyOTPForm) => {
+        const { email, otp } = data;
+        await this.otpService.verifyOTP(email, otp);
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) {
+            throw new NotFoundError(`User with email ${email} not found.`);
+        }
+        user.isVerified = true;
+        await this.userRepository.update(user.id, user);
+        return {
+            email,
+            message: 'Email has been successfully verified.'
+        }
+    }
+    resendOTP = async (email: string): Promise<RequestOTPResponse> => {
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) {
+            throw new NotFoundError(`User with email ${email} not found.`);
+        }
+        if (user.isVerified) {
+            throw new BadRequestError('Email is already verified.');
+        }
+        const canResendOtp = await this.otpService.canResendOTP(email);
+        if (!canResendOtp) {
+            throw new BadRequestError('OTP was sent recently. Please wait before requesting a new one.');
+        }
+        const otp = this.otpService.generateOTP();
+        await this.otpService.saveOTP(email, otp);
+        await this.emailService.sendOTP(email, otp);
+        return {
+            email,
+            message: 'OTP has been resent to your email address.'
+        }
+    }
     googleLogin = async (user: User | null): Promise<{ refreshToken: string }> => {
         if (!user) {
             throw new NotFoundError('User account was not created!')
@@ -59,9 +125,7 @@ export default class AuthService {
     requestOTP = async (data: RequestOTPForm): Promise<RequestOTPResponse> => {
         const rawEmail = data.email;
         const email = rawEmail.trim().toLowerCase();
-        const existingUser = await this.userRepository.findOne({
-            where: { email: email }
-        });
+        const existingUser = await this.userRepository.findByEmail(email);
         if (existingUser) {
             throw new ConflictRequestError(`This email exist in this application!`)
         }
@@ -113,21 +177,24 @@ export default class AuthService {
     requestForgotPassword = async (data: RequestOTPForm): Promise<RequestOTPResponse> => {
         const rawEmail = data.email;
         const email = rawEmail.trim().toLowerCase();
-        const existingUser = await this.userRepository.findOne({
-            where: { email: email }
-        });
+        const existingUser = await this.userRepository.findByEmail(email);
         if (!existingUser) {
             throw new NotFoundError(`This email is not registered!`)
         }
-        const otp = crypto.randomInt(100000, 999999).toString();
-        const redisKey = `forgot:${email}`;
-        const otpData: OtpRedisData = { otp: otp, isVerified: false };
-        await redisClient.set(redisKey, JSON.stringify(otpData), 'EX', 300);
+
+        // reuse OtpService for generation/storage/resend rules
+        const canResend = await this.otpService.canResendOTP(email);
+        if (!canResend) {
+            throw new BadRequestError('OTP was sent recently. Please wait before requesting a new one.');
+        }
+
+        const otp = this.otpService.generateOTP();
+        await this.otpService.saveOTP(email, otp);
         await this.emailService.sendOTP(email, otp);
+
         if (process.env.NODE_ENV !== 'production') {
-            console.log(`[DEV] requestForgotPassword stored ${redisKey} ->`, otpData);
-            const ttl = await redisClient.ttl(redisKey);
-            console.log(`[DEV] ${redisKey} TTL=${ttl}s`);
+            // OTP stored under OtpService keys (debug only)
+            console.log(`[DEV] requestForgotPassword generated OTP for ${email}`);
         }
 
         return {
@@ -140,23 +207,17 @@ export default class AuthService {
         const rawEmail = data.email;
         const email = rawEmail.trim().toLowerCase();
         const otp = data.otp.trim();
-        const redisKey = `forgot:${email}`;
-        const dataStr = await redisClient.get(redisKey);
-        if (!dataStr) {
-            throw new BadRequestError('OTP has expired or does not exist!');
-        }
-        const otpData: OtpRedisData = JSON.parse(dataStr);
-        if (otpData.otp !== otp) {
-            throw new BadRequestError('Invalid OTP!');
-        }
-        otpData.isVerified = true;
-        // extend verification window a bit
-        await redisClient.set(redisKey, JSON.stringify(otpData), 'EX', 600);
+
+        // reuse OtpService verify (this will remove the stored OTP and attempts)
+        await this.otpService.verifyOTP(email, otp);
+
+        // mark a short-lived 'forgot verified' flag so reset can proceed without OTP
+        const verifiedKey = `forgot-verified:${email}`;
+        await redisClient.set(verifiedKey, '1', 'EX', 600);
 
         if (process.env.NODE_ENV !== 'production') {
-            console.log(`[DEV] verifyForgotOTP success for ${redisKey} ->`, otpData);
-            const ttl = await redisClient.ttl(redisKey);
-            console.log(`[DEV] ${redisKey} TTL=${ttl}s`);
+            const ttl = await redisClient.ttl(verifiedKey);
+            console.log(`[DEV] verifyForgotOTP set ${verifiedKey} TTL=${ttl}s`);
         }
 
         return { email, message: 'OTP verified successfully.' }
@@ -169,54 +230,22 @@ export default class AuthService {
         if (!email) {
             throw new BadRequestError('Email is required.');
         }
-        const redisKey = `forgot:${email}`;
-        const dataStr = await redisClient.get(redisKey);
-        if (!dataStr) {
-            throw new BadRequestError('OTP has expired or does not exist!');
-        }
-        const otpData: OtpRedisData = JSON.parse(dataStr);
-        // Only allow reset if OTP was verified previously
-        if (otpData.isVerified !== true) {
+        const verifiedKey = `forgot-verified:${email}`;
+        const verified = await redisClient.get(verifiedKey);
+        if (!verified) {
             throw new BadRequestError('OTP not verified. Please verify OTP before resetting password.');
         }
-        const user = await this.userRepository.findOne({ where: { email } });
+        const user = await this.userRepository.findByEmail(email);
         if (!user) throw new NotFoundError('User not found!');
         user.password = await hashPassword(newPassword);
-        await this.userRepository.save(user);
-        await redisClient.del(redisKey);
+        await this.userRepository.update(user.id, user);
+            // No need to explicitly delete OTP here — Redis TTL will expire the key.
+        // remove verified flag after successful reset
+        await redisClient.del(verifiedKey);
         return { message: 'Password has been reset successfully.' }
     }
 
-    completeRegister = async (data: CompleteRegisterForm): Promise<UserResponse> => {
-        const rawEmail = data.email;
-        const email = rawEmail.trim().toLowerCase();
-        const { fullname, username, password } = data;
-        const redisKey = `otp:${email}`;
-        const dataStr = await redisClient.get(redisKey);
-        if(!dataStr) {
-            throw new BadRequestError('OTP has expired or does not exist!');
-        }
-        const otpData: OtpRedisData = JSON.parse(dataStr);
-
-        if (otpData.isVerified !== true) {
-            throw new BadRequestError('Email not verified!');
-        }
-        const existingUsername = await this.userRepository.findOne({
-            where: { username: username }
-        })
-        if (existingUsername) {
-            throw new ConflictRequestError(`This username exist in this application!`)
-        }
-        const newUser = this.userRepository.create({
-            fullname: fullname,
-            username: username,
-            email: email,
-            password: await hashPassword(password)
-        })
-        await this.userRepository.save(newUser)
-        await redisClient.del(redisKey);
-        return toUserResponse(newUser);
-    }
+   
 
     refreshToken = async (req: Request): Promise<{ newAccessToken: string, newRefreshToken: string }> => {
         const refreshToken = req.cookies.refreshToken;

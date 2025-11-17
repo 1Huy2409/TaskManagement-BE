@@ -13,11 +13,12 @@ export default class WorkspaceController {
     ) { }
 
     findAll = async (req: Request, res: Response) => {
+        const { status } = req.query;
         const userId = req.user?.id;
         if (!userId) {
             throw new AuthFailureError('Authentication failure');
         }
-        const workspaces = await this.workspaceService.findAll(userId);
+        const workspaces = status === 'archived' ? await this.workspaceService.findAllArchived(userId) : await this.workspaceService.findAll(userId);
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             'Get all workspaces successfully',
@@ -61,15 +62,44 @@ export default class WorkspaceController {
         if (!id) {
             throw new BadRequestError('Workspace id is required');
         }
-        const updatedWorkspace = await this.workspaceService.update(data, id);
+        const result = await this.workspaceService.update(data, id);
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
-            'Update workspace successfully',
-            updatedWorkspace,
+            result.message,
+            result.workspace,
             StatusCodes.OK
         )
         return handleServiceResponse(serviceResponse, res);
     }
+    archive = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) {
+            throw new BadRequestError('Workspace id is required');
+        }
+        const result = await this.workspaceService.archive(id);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            result.message,
+            result.workspace,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+    reopen = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) {
+            throw new BadRequestError('Workspace id is required');
+        }
+        const result = await this.workspaceService.reopen(id);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            result.message,
+            result.workspace,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+
     delete = async (req: Request, res: Response) => {
         const { id } = req.params;
         const ownerId = req.user?.id;
@@ -115,16 +145,20 @@ export default class WorkspaceController {
         return handleServiceResponse(serviceResponse, res);
     }
     updateMemberRole = async (req: Request, res: Response) => {
+        const user = req.user;
+        if (!user) {
+            throw new AuthFailureError('Authentication failure');
+        }
         const { id, userId } = req.params;
         if (!id || !userId) {
             throw new BadRequestError('Workspace id and User id are required');
         }
         const data: UpdateWorkspaceMemberRoleSchema = req.body;
-        const message = await this.workspaceService.updateMemberRole(id, userId, data);
+        const result = await this.workspaceService.updateMemberRole(id, userId, data, user.id);
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
-            'Update member role successfully',
-            message,
+            result.message,
+            result.member,
             StatusCodes.OK
         )
         return handleServiceResponse(serviceResponse, res);

@@ -3,7 +3,12 @@ import { DateTimeEntity } from "./base/date-time.entity";
 import { Board } from "./board.entity";
 import { WorkspaceMember } from "./workspace-member.entity";
 import { User } from "./user.entity";
+import { WorkspaceJoinLink } from "./workspace-join-link.entity";
 
+export enum WorkspaceStatus {
+    ACTIVE = 'active',
+    ARCHIVED = 'archived',
+}
 @Entity('workspaces')
 export class Workspace extends DateTimeEntity {
     @PrimaryGeneratedColumn('uuid')
@@ -18,6 +23,13 @@ export class Workspace extends DateTimeEntity {
     @Column({ type: 'boolean', default: false })
     visibility: boolean
 
+    @Column({
+        type: 'enum',
+        enum: WorkspaceStatus,
+        default: WorkspaceStatus.ACTIVE,
+    })
+    status: WorkspaceStatus
+
     @Column({ type: 'boolean', default: true })
     isActive: boolean
 
@@ -27,6 +39,9 @@ export class Workspace extends DateTimeEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'ownerId' })
     owner: User
+
+    @OneToMany(() => WorkspaceJoinLink, (joinLink) => joinLink.workspace)
+    joinLinks: WorkspaceJoinLink[]
 
     @OneToMany(() => WorkspaceMember, (workspaceMember) => workspaceMember.workspace)
     workspaceMembers: WorkspaceMember[]

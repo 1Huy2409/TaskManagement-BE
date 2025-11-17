@@ -5,6 +5,9 @@ import { asyncHandler } from "@/common/middleware/asyncHandler";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { BoardResponseSchema, ListBoardResponseSchema } from "./schemas";
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilder';
+import { checkAuthentication } from "@/common/middleware/authentication";
+import { checkBoardPermission, checkWorkspacePermission } from "@/common/middleware/authorization";
+import { PERMISSIONS } from "@/common/constants/permissions";
 export const boardRegistry = new OpenAPIRegistry()
 boardRegistry.register('Board', BoardResponseSchema)
 export default function boardRouter(boardController: BoardController): Router {
@@ -35,5 +38,26 @@ export default function boardRouter(boardController: BoardController): Router {
         responses: createApiResponse(ListBoardResponseSchema, 'Success')
     })
     router.get('/public/:id', asyncHandler(boardController.getPublicBoardById))
+
+    boardRegistry.registerPath({
+        method: 'delete',
+        path: '/api/v1/boards/{id}',
+        tags: ['Board'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Board UUID',
+                    format: 'uuid'
+                })
+            })
+        },
+        responses: createApiResponse(z.null(), 'Success')
+    })
+    router.delete('/:id',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_DELETE)),
+        asyncHandler(boardController.deleteBoard))
     return router;
 }

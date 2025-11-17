@@ -39,12 +39,12 @@ export default function authRouter(authController: AuthController): Router {
 
     authRegistry.registerPath({
         method: 'post',
-        path: '/api/v1/auth/request-otp',
+        path: '/api/v1/auth/register',
         tags: ['Auth'],
-        request: { body: PostRequestOTP },
+        request: { body: PostRegister },
         responses: createApiResponse(RequestOTPResponseSchema, 'Success')
     })
-    router.post('/request-otp', asyncHandler(authController.requestOTP))
+    router.post('/register', asyncHandler(authController.requestOTP))
 
     // Forgot password flow
     authRegistry.registerPath({
@@ -82,15 +82,6 @@ export default function authRouter(authController: AuthController): Router {
         responses: createApiResponse(VerifyOTPResponseSchema, 'Success')
     })
     router.post('/verify-otp', asyncHandler(authController.verifyOTP))
-
-    authRegistry.registerPath({
-        method: 'post',
-        path: '/api/v1/auth/complete-register',
-        tags: ['Auth'],
-        request: { body: PostCompleteRegister },
-        responses: createApiResponse(UserResponseSchema, 'Success')
-    })
-    router.post('/complete-register', asyncHandler(authController.completeRegister))
 
     authRegistry.registerPath({
         method: 'post',

@@ -29,8 +29,15 @@ export class User extends DateTimeEntity {
     @Column({ type: 'varchar', length: 255, nullable: true })
     avatarUrl: string
 
+
+    @Column({ type: 'text', nullable: true })
+    description?: string
+
     @Column({ type: 'boolean', nullable: false, default: true })
     isActive: boolean
+
+    @Column({ type: 'boolean', nullable: false, default: false })
+    isVerified: boolean
 
     @OneToMany(() => WorkspaceMember, (workspaceMember) => workspaceMember.user)
     workspaceMembers: WorkspaceMember[]

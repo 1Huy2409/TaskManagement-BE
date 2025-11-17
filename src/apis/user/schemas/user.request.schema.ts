@@ -33,5 +33,41 @@ export const PatchUserRequest: ZodRequestBody = {
     }
 }
 
+// Update personal profile info (name, birthday, email, description)
+export const UpdateUserProfileSchema = z.object({
+    fullname: z.string().min(1).max(255).optional().openapi({ example: 'Nguyen Van A' }),
+
+    description: z.string().max(2000).optional().openapi({ example: 'About me' }),
+});
+
+export const PatchUserProfileRequest: ZodRequestBody = {
+    description: 'Update user personal profile info',
+    content: {
+        'application/json': {
+            schema: UpdateUserProfileSchema
+        }
+    }
+}
+
+// Upload avatar (multipart/form-data)
+export const UploadAvatarSchema = z.object({
+    avatar: z.string().openapi({
+        type: 'string',
+        format: 'binary',
+        example: 'binary image file'
+    })
+});
+
+export const UploadAvatarRequest: ZodRequestBody = {
+    description: 'Upload user avatar (multipart/form-data)',
+    content: {
+        'multipart/form-data': {
+            schema: UploadAvatarSchema
+        }
+    }
+}
+
 export type PostUserRequest = z.infer<typeof CreateUserSchema>
 export type PatchUserRequest = z.infer<typeof UpdateUserSchema>
+export type PatchUserProfileRequest = z.infer<typeof UpdateUserProfileSchema>
+export type UploadAvatarRequestType = z.infer<typeof UploadAvatarSchema>

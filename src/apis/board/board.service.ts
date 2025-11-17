@@ -23,4 +23,7 @@ export default class BoardService {
         }
         return toBoardResponse(board);
     }
+    delete = async (id: string): Promise<any> => {
+        return await this.boardRepository.delete(id);
+    }
 }

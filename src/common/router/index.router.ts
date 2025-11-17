@@ -16,17 +16,20 @@ import WorkspaceController from '@/apis/workspace/workspace.controller'
 import workspaceRouter from '@/apis/workspace/workspace.router'
 import { WorkspaceMember } from '../entities/workspace-member.entity'
 import { Board } from '../entities/board.entity'
-import { BoardMember } from '../entities/board-member.entity'
 import BoardService from '@/apis/board/board.service'
 import BoardController from '@/apis/board/board.controller'
 import boardRouter from '@/apis/board/board.router'
 import { Role } from '../entities/role.entity'
-import { Otp } from '../entities/otp.entity'
 import { UserRepository } from '@/apis/user/repositories/user.repository'
 import { WorkspaceRepository } from '@/apis/workspace/repositories/workspace.repository'
 import { WorkspaceMemberRepository } from '@/apis/workspace/repositories/workspace-member.repository'
 import { BoardRepository } from '@/apis/board/repositories/board.repository'
 import { RoleRepository } from '@/apis/role/repositories/role.repository'
+import { WorkspaceJoinLink } from '../entities/workspace-join-link.entity'
+import { JoinLinkRepository } from '@/apis/joinlink/repositories/join-link.repository'
+import { JoinLinkService } from '@/apis/joinlink/join-link.service'
+import { JoinLinkController } from '@/apis/joinlink/join-link.controller'
+import joinLinkRouter from '@/apis/joinlink/join-link.router'
 
 const mainRouter: Router = express.Router()
 const initHealthCheckModule = () => {
@@ -43,11 +46,10 @@ const initUserModule = () => {
 }
 // need fixing
 const initAuthModule = () => {
-    const userRepository = AppDataSource.getRepository(User);
-    const otpRepository = AppDataSource.getRepository(Otp);
-    const authService = new AuthService(userRepository, otpRepository);
+    const userOrmRepo = AppDataSource.getRepository(User);
+    const userRepository = new UserRepository(userOrmRepo);
+    const authService = new AuthService(userRepository);
     const authController = new AuthController(authService);
-
     mainRouter.use('/auth', authRouter(authController))
 }
 
@@ -65,6 +67,20 @@ const initWorkspaceModule = () => {
 
     mainRouter.use('/workspaces', workspaceRouter(workspaceController));
 }
+const initJoinLinkModule = () => {
+    const joinLinkOrmRepo = AppDataSource.getRepository(WorkspaceJoinLink);
+    const workspaceOrmRepo = AppDataSource.getRepository(Workspace);
+    const workspaceMemberOrmRepo = AppDataSource.getRepository(WorkspaceMember);
+    const roleOrmRepo = AppDataSource.getRepository(Role);
+    const joinLinkRepository = new JoinLinkRepository(joinLinkOrmRepo);
+    const workspaceRepository = new WorkspaceRepository(workspaceOrmRepo);
+    const workspaceMemberRepository = new WorkspaceMemberRepository(workspaceMemberOrmRepo);
+    const roleRepository = new RoleRepository(roleOrmRepo);
+    const joinLinkService = new JoinLinkService(joinLinkRepository, workspaceRepository, workspaceMemberRepository, roleRepository);
+    const joinLinkController = new JoinLinkController(joinLinkService);
+
+    mainRouter.use('/workspaces', joinLinkRouter(joinLinkController))
+}
 const initBoardModule = () => {
     const boardOrmRepo = AppDataSource.getRepository(Board);
     const boardRepository = new BoardRepository(boardOrmRepo);
@@ -77,5 +93,6 @@ initHealthCheckModule();
 initAuthModule();
 initUserModule();
 initWorkspaceModule();
+initJoinLinkModule();
 initBoardModule();
 export default mainRouter;

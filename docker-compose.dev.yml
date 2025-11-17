@@ -4,7 +4,7 @@ services:
     container_name: pg_db
     ports: 
       - "5437:5432"
-    restart: always
+    restart: on-failure
     env_file:
       - .env
     volumes:
@@ -17,8 +17,21 @@ services:
       start_period: 30s
     networks:
       - task-management-network
+  redis: 
+    image: redis:8-alpine
+    container_name: redis_cache
+    ports:
+      - "${REDIS_PORT}:6379"
+    env_file:
+      - .env
+    command: redis-server --appendonly yes
+    volumes: 
+      - redis_data:/data
+    networks:
+      - task-management-network
 volumes: 
   postgres_data:
+  redis_data:
 networks:
   task-management-network:
     driver: bridge

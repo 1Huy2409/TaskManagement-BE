@@ -10,6 +10,7 @@ export const UserResponseSchema = z.object({
     email: z.string().openapi({ example: 'nhathuy2409@gmail.com' }),
     googleId: z.string().optional().openapi({ example: 'googleID123' }),
     avatarUrl: z.string().optional().openapi({ example: 'https://avatarurl.com' }),
+    description: z.string().optional().openapi({ example: 'Short bio or about me' }),
     isActive: z.boolean().openapi({ example: true }),
     createdAt: z.date(),
     updatedAt: z.date()

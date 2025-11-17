@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi, ZodRequestBody } from '@asteasolutions/zod-to-openapi';
+import { WorkspaceStatus } from '@/common/entities/workspace.entity';
 
 extendZodWithOpenApi(z);
 
