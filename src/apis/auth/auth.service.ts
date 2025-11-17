@@ -1,7 +1,7 @@
 import redisClient  from '@/config/redis.config';
 
 import { toUserResponse } from './../user/user.mapper';
-import { CompleteRegisterForm, PostRegisterSchema, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm } from './schemas/auth.schema';
+import { CompleteRegisterForm, PostRegisterSchema, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm, ResetPasswordForm } from './schemas/auth.schema';
 import { User } from "@/common/entities/user.entity";
 import { AuthFailureError, BadRequestError, ConflictRequestError, NotFoundError } from "@/common/handler/error.response";
 import { MoreThan, Repository } from "typeorm";
@@ -57,7 +57,8 @@ export default class AuthService {
 
     // register v2:
     requestOTP = async (data: RequestOTPForm): Promise<RequestOTPResponse> => {
-        const { email } = data;
+        const rawEmail = data.email;
+        const email = rawEmail.trim().toLowerCase();
         const existingUser = await this.userRepository.findOne({
             where: { email: email }
         });
@@ -73,8 +74,13 @@ export default class AuthService {
             otp: otp,
             isVerified: false
         };
-      await redisClient.set(redisKey, JSON.stringify(otpData), 'EX', 300);
+        await redisClient.set(redisKey, JSON.stringify(otpData), 'EX', 300);
         await this.emailService.sendOTP(email, otp);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[DEV] requestOTP stored ${redisKey} ->`, otpData);
+            const ttl = await redisClient.ttl(redisKey);
+            console.log(`[DEV] ${redisKey} TTL=${ttl}s`);
+        }
 
         return {
             email: email,
@@ -82,8 +88,10 @@ export default class AuthService {
         }
     }
     verifyOTP = async (data: VerifyOTPForm): Promise<{ email: string, message: string }> => {
-        const { email, otp } = data;
-       const redisKey = `otp:${email}`;
+        const rawEmail = data.email;
+        const email = rawEmail.trim().toLowerCase();
+        const otp = data.otp.trim();
+        const redisKey = `otp:${email}`;
         const dataStr = await redisClient.get(redisKey);
         if (!dataStr) {
             throw new BadRequestError('OTP has expired or does not exist!');
@@ -101,8 +109,88 @@ export default class AuthService {
         }
     }
 
+    // Forgot password: request OTP for existing account
+    requestForgotPassword = async (data: RequestOTPForm): Promise<RequestOTPResponse> => {
+        const rawEmail = data.email;
+        const email = rawEmail.trim().toLowerCase();
+        const existingUser = await this.userRepository.findOne({
+            where: { email: email }
+        });
+        if (!existingUser) {
+            throw new NotFoundError(`This email is not registered!`)
+        }
+        const otp = crypto.randomInt(100000, 999999).toString();
+        const redisKey = `forgot:${email}`;
+        const otpData: OtpRedisData = { otp: otp, isVerified: false };
+        await redisClient.set(redisKey, JSON.stringify(otpData), 'EX', 300);
+        await this.emailService.sendOTP(email, otp);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[DEV] requestForgotPassword stored ${redisKey} ->`, otpData);
+            const ttl = await redisClient.ttl(redisKey);
+            console.log(`[DEV] ${redisKey} TTL=${ttl}s`);
+        }
+
+        return {
+            email: email,
+            message: 'OTP has been sent to your email.'
+        }
+    }
+
+    verifyForgotOTP = async (data: VerifyOTPForm): Promise<{ email: string, message: string }> => {
+        const rawEmail = data.email;
+        const email = rawEmail.trim().toLowerCase();
+        const otp = data.otp.trim();
+        const redisKey = `forgot:${email}`;
+        const dataStr = await redisClient.get(redisKey);
+        if (!dataStr) {
+            throw new BadRequestError('OTP has expired or does not exist!');
+        }
+        const otpData: OtpRedisData = JSON.parse(dataStr);
+        if (otpData.otp !== otp) {
+            throw new BadRequestError('Invalid OTP!');
+        }
+        otpData.isVerified = true;
+        // extend verification window a bit
+        await redisClient.set(redisKey, JSON.stringify(otpData), 'EX', 600);
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[DEV] verifyForgotOTP success for ${redisKey} ->`, otpData);
+            const ttl = await redisClient.ttl(redisKey);
+            console.log(`[DEV] ${redisKey} TTL=${ttl}s`);
+        }
+
+        return { email, message: 'OTP verified successfully.' }
+    }
+
+    resetPassword = async (data: ResetPasswordForm): Promise<{ message: string }> => {
+        const rawEmail = data.email;
+        const email = rawEmail.trim().toLowerCase();
+        const { newPassword } = data;
+        if (!email) {
+            throw new BadRequestError('Email is required.');
+        }
+        const redisKey = `forgot:${email}`;
+        const dataStr = await redisClient.get(redisKey);
+        if (!dataStr) {
+            throw new BadRequestError('OTP has expired or does not exist!');
+        }
+        const otpData: OtpRedisData = JSON.parse(dataStr);
+        // Only allow reset if OTP was verified previously
+        if (otpData.isVerified !== true) {
+            throw new BadRequestError('OTP not verified. Please verify OTP before resetting password.');
+        }
+        const user = await this.userRepository.findOne({ where: { email } });
+        if (!user) throw new NotFoundError('User not found!');
+        user.password = await hashPassword(newPassword);
+        await this.userRepository.save(user);
+        await redisClient.del(redisKey);
+        return { message: 'Password has been reset successfully.' }
+    }
+
     completeRegister = async (data: CompleteRegisterForm): Promise<UserResponse> => {
-        const { email, fullname, username, password } = data;
+        const rawEmail = data.email;
+        const email = rawEmail.trim().toLowerCase();
+        const { fullname, username, password } = data;
         const redisKey = `otp:${email}`;
         const dataStr = await redisClient.get(redisKey);
         if(!dataStr) {
