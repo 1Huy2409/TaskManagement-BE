@@ -16,12 +16,10 @@ import WorkspaceController from '@/apis/workspace/workspace.controller'
 import workspaceRouter from '@/apis/workspace/workspace.router'
 import { WorkspaceMember } from '../entities/workspace-member.entity'
 import { Board } from '../entities/board.entity'
-import { BoardMember } from '../entities/board-member.entity'
 import BoardService from '@/apis/board/board.service'
 import BoardController from '@/apis/board/board.controller'
 import boardRouter from '@/apis/board/board.router'
 import { Role } from '../entities/role.entity'
-import { Otp } from '../entities/otp.entity'
 import { UserRepository } from '@/apis/user/repositories/user.repository'
 import { WorkspaceRepository } from '@/apis/workspace/repositories/workspace.repository'
 import { WorkspaceMemberRepository } from '@/apis/workspace/repositories/workspace-member.repository'
@@ -48,11 +46,10 @@ const initUserModule = () => {
 }
 // need fixing
 const initAuthModule = () => {
-    const userRepository = AppDataSource.getRepository(User);
-    const otpRepository = AppDataSource.getRepository(Otp);
-    const authService = new AuthService(userRepository, otpRepository);
+    const userOrmRepo = AppDataSource.getRepository(User);
+    const userRepository = new UserRepository(userOrmRepo);
+    const authService = new AuthService(userRepository);
     const authController = new AuthController(authService);
-
     mainRouter.use('/auth', authRouter(authController))
 }
 

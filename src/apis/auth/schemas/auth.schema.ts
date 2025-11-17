@@ -17,13 +17,13 @@ export const PostLogin: ZodRequestBody = {
         }
     }
 }
-export type RegisterForm = z.infer<typeof PostRegisterSchema>
 export const PostRegisterSchema = z.object({
     fullname: z.string().min(4).max(255).openapi({ example: "Nguyen Huu Nhat Huy" }),
     username: z.string().min(4).max(20).openapi({ example: "username@123" }),
     email: z.email().openapi({ example: "nguyenvana2409@gmail.com" }),
     password: z.string().min(6).max(255).openapi({ example: "your_password" })
 })
+export type RegisterForm = z.infer<typeof PostRegisterSchema>
 export const PostRegister: ZodRequestBody = {
     description: 'Register form',
     content: {
@@ -37,10 +37,6 @@ export const PostRegister: ZodRequestBody = {
 export const RequestOTPSchema = z.object({
     email: z.email().openapi({ example: 'nguyenvana2409@gmail.com' })
 })
-export const RequestOTPResponseSchema = z.object({
-    email: z.email(),
-    message: z.string()
-})
 export const PostRequestOTP = {
     content: {
         'application/json': {
@@ -48,6 +44,10 @@ export const PostRequestOTP = {
         }
     }
 };
+export const RequestOTPResponseSchema = z.object({
+    email: z.email(),
+    message: z.string()
+})
 // Step 2: Verify OTP
 export const VerifyOTPSchema = z.object({
     email: z.email(),

@@ -12,7 +12,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
         const permissionRepository = queryRunner.manager.getRepository(Permission);
         const rolePermissionRepository = queryRunner.manager.getRepository(RolePermission);
 
-        console.log('🌱 Seeding roles and permissions...');
+        console.log('Seeding roles and permissions...');
 
         // Create permissions
         const permissionsData = [
@@ -31,7 +31,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
         ];
 
         const createdPermissions = await permissionRepository.save(permissionsData);
-        console.log(`✓ Created ${createdPermissions.length} permissions`);
+        console.log(`Created ${createdPermissions.length} permissions`);
 
         const getPermission = (action: string) => createdPermissions.find(p => p.action === action);
 
@@ -48,7 +48,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
             permissionId: p.id
         }));
         await rolePermissionRepository.save(workspaceOwnerPermissions);
-        console.log('✓ Created role: workspace_owner');
+        console.log('Created role: workspace_owner');
 
         // 2. Workspace Admin
         const workspaceAdmin = await roleRepository.save({
@@ -79,7 +79,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
             .filter(p => p !== null);
 
         await rolePermissionRepository.save(workspaceAdminPermissions);
-        console.log('✓ Created role: workspace_admin');
+        console.log('Created role: workspace_admin');
 
         // 3. Workspace Member
         const workspaceMember = await roleRepository.save({
@@ -105,7 +105,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
             .filter(p => p !== null);
 
         await rolePermissionRepository.save(workspaceMemberPermissions);
-        console.log('✓ Created role: workspace_member');
+        console.log('Created role: workspace_member');
 
         // 4. Board Owner
         const boardOwner = await roleRepository.save({
@@ -131,7 +131,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
             .filter(p => p !== null);
 
         await rolePermissionRepository.save(boardOwnerPermissions);
-        console.log('✓ Created role: board_owner');
+        console.log('Created role: board_owner');
 
         // 5. Board Admin
         const boardAdmin = await roleRepository.save({
@@ -156,7 +156,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
             .filter(p => p !== null);
 
         await rolePermissionRepository.save(boardAdminPermissions);
-        console.log('✓ Created role: board_admin');
+        console.log('Created role: board_admin');
 
         // 6. Board Member
         const boardMember = await roleRepository.save({
@@ -179,9 +179,9 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
             .filter(p => p !== null);
 
         await rolePermissionRepository.save(boardMemberPermissions);
-        console.log('✓ Created role: board_member');
+        console.log('Created role: board_member');
 
-        console.log('✓ Seeding completed successfully!');
+        console.log('Seeding completed successfully!');
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
@@ -189,6 +189,6 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
         await queryRunner.query(`DELETE FROM "role-permission"`);
         await queryRunner.query(`DELETE FROM "roles" WHERE "isSystemRole" = true`);
         await queryRunner.query(`DELETE FROM "permissions"`);
-        console.log('✓ Rollback completed - all seeded data removed');
+        console.log('Rollback completed - all seeded data removed');
     }
 }

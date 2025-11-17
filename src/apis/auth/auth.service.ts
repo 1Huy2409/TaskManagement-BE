@@ -1,28 +1,27 @@
 import { toUserResponse } from './../user/user.mapper';
-import { CompleteRegisterForm, PostRegisterSchema, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm } from './schemas/auth.schema';
+import { CompleteRegisterForm, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm } from './schemas/auth.schema';
 import { User } from "@/common/entities/user.entity";
-import { AuthFailureError, BadRequestError, ConflictRequestError, NotFoundError } from "@/common/handler/error.response";
-import { MoreThan, Repository } from "typeorm";
+import { AuthFailureError, BadRequestError, ConflictRequestError, NotFoundError } from "@/common/handler/error.response";;
 import { comparePassword, hashPassword } from "@/common/utils/handlePassword";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "@/common/utils/auth.util";
-import { email } from "zod";
 import crypto from 'crypto';
 import { UserResponse } from '../user/schemas';
 import { Request } from 'express';
 import { EmailService } from '@/common/utils/mailService';
-import { Otp } from '@/common/entities/otp.entity';
+import { IUserRepository } from '../user/repositories/user.repository.interface';
+import { OtpService } from '@/common/utils/otpService';
 export default class AuthService {
     private emailService: EmailService
-    constructor(private userRepository: Repository<User>, private otpRepository: Repository<Otp>) {
+    private otpService: OtpService
+    constructor(private userRepository: IUserRepository) {
         this.emailService = new EmailService();
+        this.otpService = new OtpService()
     }
 
     login = async (credentials: { username: string, password: string }): Promise<{ accessToken: string, refreshToken: string, user: UserResponse }> => {
         const { username, password } = credentials
         console.log(username);
-        const user = await this.userRepository.findOne({
-            where: { username: username }
-        })
+        const user = await this.userRepository.findByUsername(username);
         if (!user) {
             throw new AuthFailureError(`Username ${username} is not found!`)
         }
@@ -39,6 +38,72 @@ export default class AuthService {
         const userResponse: UserResponse = toUserResponse(user)
         return { accessToken, refreshToken, user: userResponse }
     }
+    register = async (userData: RegisterForm): Promise<RequestOTPResponse> => {
+        const { fullname, username, email, password } = userData;
+        const existingUserByEmail = await this.userRepository.findByEmail(email);
+        if (existingUserByEmail) {
+            if (existingUserByEmail.isVerified) {
+                throw new ConflictRequestError(`Email ${email} is already in use.`);
+            }
+            const canResendOtp = await this.otpService.canResendOTP(email);
+            if (!canResendOtp) {
+                throw new BadRequestError('OTP was sent recently. Please wait before requesting a new one.');
+            }
+        }
+        const existingUserByUsername = await this.userRepository.findByUsernameExceptId(username, existingUserByEmail ? existingUserByEmail.id : '');
+        if (existingUserByUsername) {
+            throw new ConflictRequestError(`Username ${username} is already in use.`);
+        }
+        await this.userRepository.create({
+            fullname,
+            username,
+            email,
+            password: await hashPassword(password),
+        })
+        // always generate and send OTP
+        const otp = this.otpService.generateOTP();
+        await this.otpService.saveOTP(email, otp);
+        await this.emailService.sendOTP(email, otp);
+        return {
+            email,
+            message: 'OTP has been sent to your email address.'
+        }
+    }
+
+    verifyEmail = async (data: VerifyOTPForm) => {
+        const { email, otp } = data;
+        await this.otpService.verifyOTP(email, otp);
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) {
+            throw new NotFoundError(`User with email ${email} not found.`);
+        }
+        user.isVerified = true;
+        await this.userRepository.update(user.id, user);
+        return {
+            email,
+            message: 'Email has been successfully verified.'
+        }
+    }
+    resendOTP = async (email: string): Promise<RequestOTPResponse> => {
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) {
+            throw new NotFoundError(`User with email ${email} not found.`);
+        }
+        if (user.isVerified) {
+            throw new BadRequestError('Email is already verified.');
+        }
+        const canResendOtp = await this.otpService.canResendOTP(email);
+        if (!canResendOtp) {
+            throw new BadRequestError('OTP was sent recently. Please wait before requesting a new one.');
+        }
+        const otp = this.otpService.generateOTP();
+        await this.otpService.saveOTP(email, otp);
+        await this.emailService.sendOTP(email, otp);
+        return {
+            email,
+            message: 'OTP has been resent to your email address.'
+        }
+    }
     googleLogin = async (user: User | null): Promise<{ refreshToken: string }> => {
         if (!user) {
             throw new NotFoundError('User account was not created!')
@@ -47,80 +112,6 @@ export default class AuthService {
         const refreshToken = signRefreshToken(payload);
         console.log('Generated refresh token for Google login:', refreshToken); // Debug log
         return { refreshToken }
-    }
-
-    // register v2:
-    requestOTP = async (data: RequestOTPForm): Promise<RequestOTPResponse> => {
-        const { email } = data;
-        const existingUser = await this.userRepository.findOne({
-            where: { email: email }
-        });
-        if (existingUser) {
-            throw new ConflictRequestError(`This email exist in this application!`)
-        }
-        const otp = crypto.randomInt(100000, 999999).toString();
-        await this.otpRepository.delete({ email: email });
-        const newOtpEntity = this.otpRepository.create({
-            email: email,
-            otp: otp,
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now
-        });
-        await this.otpRepository.save(newOtpEntity);
-        await this.emailService.sendOTP(email, otp);
-
-        return {
-            email: email,
-            message: 'OTP has been sent to your email.'
-        }
-    }
-    verifyOTP = async (data: VerifyOTPForm): Promise<{ email: string, message: string }> => {
-        const { email, otp } = data;
-        const otpEntity = await this.otpRepository.findOne({
-            where: {
-                email: email,
-                otp: otp,
-                isVerified: false,
-            }
-        })
-        if (!otpEntity) {
-            throw new BadRequestError('Invalid OTP!')
-        }
-        if (otpEntity.expiresAt < new Date()) {
-            throw new BadRequestError('OTP has expired!')
-        }
-        otpEntity.isVerified = true;
-        await this.otpRepository.save(otpEntity);
-        return {
-            email,
-            message: 'OTP verified successfully.'
-        }
-    }
-
-    completeRegister = async (data: CompleteRegisterForm): Promise<UserResponse> => {
-        const { email, fullname, username, password } = data;
-        const otpEntity = await this.otpRepository.findOne({
-            where: {
-                email: email,
-                isVerified: true
-            }
-        });
-        if (!otpEntity) {
-            throw new BadRequestError('Email not verified!')
-        }
-        const existingUsername = await this.userRepository.findOne({
-            where: { username: username }
-        })
-        if (existingUsername) {
-            throw new ConflictRequestError(`This username exist in this application!`)
-        }
-        const newUser = this.userRepository.create({
-            fullname: fullname,
-            username: username,
-            email: email,
-            password: await hashPassword(password)
-        })
-        await this.userRepository.save(newUser)
-        return toUserResponse(newUser);
     }
 
     refreshToken = async (req: Request): Promise<{ newAccessToken: string, newRefreshToken: string }> => {
