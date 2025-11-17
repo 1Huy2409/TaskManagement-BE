@@ -33,4 +33,18 @@ export default class BoardController {
         )
         return handleServiceResponse(serviceResponse, res);
     }
+    deleteBoard = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) {
+            throw new BadRequestError('Board id is required')
+        }
+        await this.boardService.delete(id);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Delete board successfully',
+            null,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
 }

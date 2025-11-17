@@ -4,7 +4,7 @@ services:
     container_name: pg_db
     ports: 
       - "5437:5432"
-    restart: always
+    restart: on-failure
     env_file:
       - .env
     volumes:
