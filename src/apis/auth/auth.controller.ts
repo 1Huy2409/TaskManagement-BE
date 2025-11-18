@@ -5,7 +5,7 @@ import { handleServiceResponse } from "@/common/utils/httpHandler";
 import { ResponseStatus, ServiceResponse } from "@/common/models/service.response";
 import { StatusCodes } from "http-status-codes";
 import { User } from "@/common/entities/user.entity";
-import { CompleteRegisterForm, RegisterForm, RequestOTPForm, VerifyOTPForm } from "./schemas/auth.schema";
+import { CompleteRegisterForm, RegisterForm, RequestOTPForm, VerifyOTPForm, ResetPasswordForm } from "./schemas/auth.schema";
 import { AuthFailureError } from '@/common/handler/error.response';
 
 export default class AuthController {
@@ -80,6 +80,44 @@ export default class AuthController {
         );
         return handleServiceResponse(serviceResponse, res);
     }
+    // Forgot password: request OTP for existing account
+    requestForgotPassword = async (req: Request, res: Response) => {
+        const data: RequestOTPForm = req.body;
+        const result = await this.authService.requestForgotPassword(data);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            result.message,
+            { email: result.email },
+            StatusCodes.OK
+        );
+        return handleServiceResponse(serviceResponse, res);
+    }
+
+    verifyForgotOTP = async (req: Request, res: Response) => {
+        const data: VerifyOTPForm = req.body;
+        const result = await this.authService.verifyForgotOTP(data);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            result.message,
+            { email: result.email },
+            StatusCodes.OK
+        );
+        return handleServiceResponse(serviceResponse, res);
+    }
+
+    resetPassword = async (req: Request, res: Response) => {
+        const data: ResetPasswordForm = req.body;
+        const result = await this.authService.resetPassword(data);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            result.message,
+            null,
+            StatusCodes.OK
+        );
+        return handleServiceResponse(serviceResponse, res);
+    }
+   
+    
 
     refreshToken = async (req: Request, res: Response) => {
         const { newAccessToken, newRefreshToken } = await this.authService.refreshToken(req)

@@ -54,7 +54,7 @@ export const VerifyOTPSchema = z.object({
     otp: z.string().length(6)
 });
 
-export const VerifyOTPResponseSchema = z.object({
+ export const VerifyOTPResponseSchema = z.object({
     email: z.email(),
     message: z.string()
 });
@@ -87,3 +87,20 @@ export type RequestOTPForm = z.infer<typeof RequestOTPSchema>;
 export type RequestOTPResponse = z.infer<typeof RequestOTPResponseSchema>;
 export type VerifyOTPForm = z.infer<typeof VerifyOTPSchema>;
 export type CompleteRegisterForm = z.infer<typeof CompleteRegisterSchema>;
+
+// Forgot password: reset flow
+// Reset password after forgot-password verify: only email + newPassword required
+export const ResetPasswordSchema = z.object({
+    email: z.email(),
+    newPassword: z.string().min(6)
+});
+
+export const PostResetPassword = {
+    content: {
+        'application/json': {
+            schema: ResetPasswordSchema
+        }
+    }
+};
+
+export type ResetPasswordForm = z.infer<typeof ResetPasswordSchema>;
