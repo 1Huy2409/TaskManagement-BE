@@ -3,13 +3,34 @@ import type { Express, Request, Response } from "express";
 import { handleServiceResponse } from "@/common/utils/httpHandler";
 import { ResponseStatus, ServiceResponse } from "@/common/models/service.response";
 import { StatusCodes } from "http-status-codes";
-import { BadRequestError } from "@/common/handler/error.response";
+import { AuthFailureError, BadRequestError } from "@/common/handler/error.response";
 import { PatchUserProfileRequest } from "./schemas";
+import { verifyAccessToken } from "@/common/utils/auth.util";
 
 export default class UserController {
     constructor(
         private userService: UserService
     ) {
+    }
+
+    private getUserIdFromAuth = (req: Request): string => {
+        if (req.user?.id) {
+            return req.user.id;
+        }
+        const bearerToken = req.headers["authorization"];
+        if (!bearerToken) {
+            throw new AuthFailureError("You 're not authenticated!");
+        }
+        const token = bearerToken.split(" ")[1];
+        if (!token) {
+            throw new AuthFailureError("Invalid token format!");
+        }
+        const payload = verifyAccessToken(token);
+        const userId = (payload as any).sub;
+        if (!userId) {
+            throw new AuthFailureError("User not found");
+        }
+        return userId;
     }
 
     findAll = async (req: Request, res: Response) => {
@@ -39,9 +60,9 @@ export default class UserController {
     }
 
     updateProfile = async (req: Request, res: Response) => {
-        const id = req.params.id;
+        const id = this.getUserIdFromAuth(req);
         if (!id) {
-            throw new BadRequestError('User ID is required for updating!');
+            throw new AuthFailureError('Authentication failure');
         }
         const payload: PatchUserProfileRequest = req.body;
         const data = await this.userService.updateProfile(id, payload);
@@ -55,9 +76,9 @@ export default class UserController {
     }
 
     uploadAvatar = async (req: Request, res: Response) => {
-        const id = req.params.id;
+        const id = this.getUserIdFromAuth(req);
         if (!id) {
-            throw new BadRequestError('User ID is required for uploading avatar!');
+            throw new AuthFailureError('Authentication failure');
         }
         const file = (req as Request & { file?: Express.Multer.File }).file;
         if (!file) {
