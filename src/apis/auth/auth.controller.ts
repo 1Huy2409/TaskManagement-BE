@@ -5,7 +5,7 @@ import { handleServiceResponse } from "@/common/utils/httpHandler";
 import { ResponseStatus, ServiceResponse } from "@/common/models/service.response";
 import { StatusCodes } from "http-status-codes";
 import { User } from "@/common/entities/user.entity";
-import { CompleteRegisterForm, RegisterForm, RequestOTPForm, VerifyOTPForm, ResetPasswordForm } from "./schemas/auth.schema";
+import { CompleteRegisterForm, RegisterForm, RequestOTPForm, VerifyOTPForm, ResetPasswordForm, ResetPasswordFormHaveLoggedIn} from "./schemas/auth.schema";
 import { AuthFailureError } from '@/common/handler/error.response';
 
 export default class AuthController {
@@ -111,7 +111,7 @@ export default class AuthController {
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             result.message,
-            null,
+            { email: result.email, user: result.user },
             StatusCodes.OK
         );
         return handleServiceResponse(serviceResponse, res);
@@ -161,6 +161,17 @@ export default class AuthController {
             ResponseStatus.Sucess,
             'Token is valid',
             { valid: true },
+            StatusCodes.OK
+        );
+        return handleServiceResponse(serviceResponse, res);
+    }
+    resetPasswordHaveLoggedIn = async (req: Request, res: Response) => {
+        const data: ResetPasswordFormHaveLoggedIn = req.body;
+        const result = await this.authService.resetPasswordHaveLoggedIn(data);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            result.message,
+            { email: result.email, user: result.user },
             StatusCodes.OK
         );
         return handleServiceResponse(serviceResponse, res);

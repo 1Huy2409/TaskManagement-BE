@@ -1,4 +1,5 @@
 import { email, z } from 'zod'
+import { UserResponseSchema } from '@/apis/user/schemas';
 import { extendZodWithOpenApi, ZodRequestBody } from '@asteasolutions/zod-to-openapi';
 
 extendZodWithOpenApi(z);
@@ -104,3 +105,23 @@ export const PostResetPassword = {
 };
 
 export type ResetPasswordForm = z.infer<typeof ResetPasswordSchema>;
+
+export const ResetPasswordSchemaHaveLoggedIn = z.object({
+    email: z.email(),
+    currentPassword: z.string().min(6),
+    newPassword: z.string().min(6),
+
+});
+export const PostResetPasswordHaveLoggedIn = {
+    content: {
+        'application/json': {
+            schema: ResetPasswordSchemaHaveLoggedIn
+        }
+    }
+};
+export type ResetPasswordFormHaveLoggedIn = z.infer<typeof ResetPasswordSchemaHaveLoggedIn>;
+
+export const ResetPasswordResponseSchema = z.object({
+    email: z.email(),
+    user: UserResponseSchema
+});

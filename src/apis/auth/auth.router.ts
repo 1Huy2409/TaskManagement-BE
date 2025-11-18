@@ -5,7 +5,7 @@ import { Router } from "express";
 import express from 'express'
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilder";
 import z from "zod";
-import { LoginResponseSchema, PostCompleteRegister, PostLogin, PostRegister, PostRequestOTP, PostVerifyOTP, PostResetPassword, RequestOTPResponseSchema, VerifyOTPResponseSchema } from "./schemas/auth.schema";
+import { LoginResponseSchema, PostCompleteRegister, PostLogin, PostRegister, PostRequestOTP, PostVerifyOTP, PostResetPassword, PostResetPasswordHaveLoggedIn, RequestOTPResponseSchema, VerifyOTPResponseSchema, ResetPasswordResponseSchema } from "./schemas/auth.schema";
 import { asyncHandler } from "@/common/middleware/asyncHandler";
 import passport from "passport";
 import { checkAuthentication } from "@/common/middleware/authentication";
@@ -45,7 +45,7 @@ export default function authRouter(authController: AuthController): Router {
         responses: createApiResponse(RequestOTPResponseSchema, 'Success')
     })
     router.post('/register', asyncHandler(authController.requestOTP))
-
+    
     // Forgot password flow
     authRegistry.registerPath({
         method: 'post',
@@ -70,7 +70,7 @@ export default function authRouter(authController: AuthController): Router {
         path: '/api/v1/auth/forgot-password/reset',
         tags: ['Auth'],
         request: { body: PostResetPassword },
-        responses: createApiResponse(z.null(), 'Success')
+        responses: createApiResponse(ResetPasswordResponseSchema, 'Success')
     })
     router.post('/forgot-password/reset', asyncHandler(authController.resetPassword))
 
@@ -110,10 +110,18 @@ export default function authRouter(authController: AuthController): Router {
         security: [{ bearerAuth: [] }],
         responses: createApiResponse(z.object({ valid: z.boolean() }), 'Success')
     })
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/v1/auth/reset',
+        tags: ['Auth'],
+        security: [{ bearerAuth: [] }],
+        request: { body: PostResetPasswordHaveLoggedIn },
+        responses: createApiResponse(ResetPasswordResponseSchema, 'Success')
+    })
     router.get('/verify',
         asyncHandler(checkAuthentication),
         asyncHandler(authController.verifyToken)
     )
-
+    router.post('/reset', asyncHandler(checkAuthentication), asyncHandler(authController.resetPasswordHaveLoggedIn))
     return router
 }
