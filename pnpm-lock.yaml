@@ -133,7 +133,7 @@ importers:
         specifier: ^4.28.10
         version: 4.28.10
       '@types/multer':
-        specifier: ^1.4.12
+        specifier: ^1.4.13
         version: 1.4.13
       '@types/node':
         specifier: ^24.5.2

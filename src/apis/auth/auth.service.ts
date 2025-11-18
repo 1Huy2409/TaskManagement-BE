@@ -1,7 +1,7 @@
 import redisClient  from '@/config/redis.config';
 
 import { toUserResponse } from './../user/user.mapper';
-import { CompleteRegisterForm, PostRegisterSchema, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm, ResetPasswordForm } from './schemas/auth.schema';
+import { CompleteRegisterForm, PostRegisterSchema, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm, ResetPasswordForm, ResetPasswordFormHaveLoggedIn } from './schemas/auth.schema';
 import { User } from "@/common/entities/user.entity";
 import { AuthFailureError, BadRequestError, ConflictRequestError, NotFoundError } from "@/common/handler/error.response";;
 import { comparePassword, hashPassword } from "@/common/utils/handlePassword";
@@ -223,7 +223,7 @@ export default class AuthService {
         return { email, message: 'OTP verified successfully.' }
     }
 
-    resetPassword = async (data: ResetPasswordForm): Promise<{ message: string }> => {
+    resetPassword = async (data: ResetPasswordForm): Promise<{ message: string, email: string, user: UserResponse }> => {
         const rawEmail = data.email;
         const email = rawEmail.trim().toLowerCase();
         const { newPassword } = data;
@@ -238,11 +238,15 @@ export default class AuthService {
         const user = await this.userRepository.findByEmail(email);
         if (!user) throw new NotFoundError('User not found!');
         user.password = await hashPassword(newPassword);
-        await this.userRepository.update(user.id, user);
-            // No need to explicitly delete OTP here — Redis TTL will expire the key.
+        const updatedUser = await this.userRepository.update(user.id, user);
+        // No need to explicitly delete OTP here — Redis TTL will expire the key.
         // remove verified flag after successful reset
         await redisClient.del(verifiedKey);
-        return { message: 'Password has been reset successfully.' }
+        return {
+            message: 'Password has been reset successfully.',
+            email,
+            user: toUserResponse(updatedUser)
+        }
     }
 
    
@@ -259,6 +263,28 @@ export default class AuthService {
         return {
             newAccessToken,
             newRefreshToken
+        }
+    }
+    resetPasswordHaveLoggedIn = async (data: ResetPasswordFormHaveLoggedIn): Promise<{ message: string, email: string, user: UserResponse }> => {
+        const rawEmail = data.email;
+        const email = rawEmail.trim().toLowerCase();        
+        const { currentPassword, newPassword } = data;
+        if (!email) {
+            throw new BadRequestError('Email is required.');
+        }
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) throw new NotFoundError('User not found!');
+        
+        const isCurrentPasswordValid = await comparePassword(currentPassword, user.password);
+        if (!isCurrentPasswordValid) {
+            throw new BadRequestError('Current password is incorrect.');
+        }
+        user.password = await hashPassword(newPassword);
+        const updatedUser = await this.userRepository.update(user.id, user);        
+        return {
+            message: 'Password has been reset successfully.',
+            email,
+            user: toUserResponse(updatedUser)
         }
     }
 }
