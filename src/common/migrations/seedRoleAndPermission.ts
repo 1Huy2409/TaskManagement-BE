@@ -14,6 +14,22 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
 
         console.log('Seeding roles and permissions...');
 
+        // Xóa dữ liệu cũ trước khi seed (theo thứ tự để tránh lỗi foreign key)
+        console.log('Cleaning old data...');
+
+        // Xóa các bảng tham chiếu đến roles trước
+        await queryRunner.query(`DELETE FROM "board-members"`);
+        await queryRunner.query(`DELETE FROM "workspace-members"`);
+
+        // Sau đó xóa role-permission
+        await queryRunner.query(`DELETE FROM "role-permission"`);
+
+        // Cuối cùng xóa roles và permissions
+        await queryRunner.query(`DELETE FROM "roles" WHERE "isSystemRole" = true`);
+        await queryRunner.query(`DELETE FROM "permissions"`);
+
+        console.log('Old data cleaned successfully!');
+
         // Create permissions
         const permissionsData = [
             // WORKSPACE
@@ -23,7 +39,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
             { action: PERMISSIONS.WORKSPACE_DELETE, resourceType: ResourceType.WORKSPACE, description: 'Delete workspace' },
             { action: PERMISSIONS.WORKSPACE_MANAGE_MEMBERS, resourceType: ResourceType.WORKSPACE, description: 'Add, remove, and update workspace members' },
             { action: PERMISSIONS.WORKSPACE_VIEW_MEMBERS, resourceType: ResourceType.WORKSPACE, description: 'View workspace members list' },
-
+            { action: PERMISSIONS.WORKSPACE_MANAGE_ROLES, resourceType: ResourceType.WORKSPACE, description: 'Manage roles & permissions in workspace' },
             // BOARD – phải là ResourceType.BOARD
             { action: PERMISSIONS.BOARD_VIEW, resourceType: ResourceType.BOARD, description: 'View board details' },
             { action: PERMISSIONS.BOARD_CREATE, resourceType: ResourceType.BOARD, description: 'Create new board in workspace' },
@@ -72,6 +88,7 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
             PERMISSIONS.BOARD_DELETE,
             PERMISSIONS.BOARD_MANAGE_MEMBERS,
             PERMISSIONS.BOARD_VIEW_MEMBERS,
+            PERMISSIONS.WORKSPACE_MANAGE_ROLES
         ];
 
         const workspaceAdminPermissions = workspaceAdminActions

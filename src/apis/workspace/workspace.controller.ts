@@ -6,10 +6,14 @@ import { handleServiceResponse } from "@/common/utils/httpHandler";
 import { AuthFailureError, BadRequestError } from "@/common/handler/error.response";
 import { AddWorkspaceMemberSchema, CreateWorkspaceSchema, UpdateWorkspaceMemberRoleSchema, UpdateWorkspaceSchema } from "./schemas";
 import { CreateBoardSchema, UpdateBoardSchema } from "../board/schemas";
+import { WorkspaceRoleService } from "./workspace-role.service";
+import { CreateWorkspaceRoleDto, UpdateWorkspaceRoleDto } from "./dto/workspace-role.dto";
+import { toWorkspaceRoleResponse } from "./mapper/workspace-role.mapper";
 
 export default class WorkspaceController {
     constructor(
-        private workspaceService: WorkspaceService
+        private workspaceService: WorkspaceService,
+        private workspaceRoleService: WorkspaceRoleService
     ) { }
 
     findAll = async (req: Request, res: Response) => {
@@ -231,6 +235,65 @@ export default class WorkspaceController {
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             'Delete board in workspace successfully',
+            message,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+    // manage workspace roles
+    getWorkspaceRoles = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) {
+            throw new BadRequestError('Workspace id is required');
+        }
+        const roles = await this.workspaceRoleService.getRoles(id);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Get workspace roles successfully',
+            roles.map(toWorkspaceRoleResponse),
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+    addWorkspaceRole = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) {
+            throw new BadRequestError('Workspace id is required');
+        }
+        const dto: CreateWorkspaceRoleDto = req.body;
+        const newRole = await this.workspaceRoleService.createRole(id, dto);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Create workspace role successfully',
+            toWorkspaceRoleResponse(newRole),
+            StatusCodes.CREATED
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+    updateWorkspaceRole = async (req: Request, res: Response) => {
+        const { id, roleId } = req.params;
+        if (!id || !roleId) {
+            throw new BadRequestError('Workspace id and Role id are required');
+        }
+        const dto: UpdateWorkspaceRoleDto = req.body;
+        const updatedRole = await this.workspaceRoleService.updateRole(id, roleId, dto);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Update workspace role successfully',
+            toWorkspaceRoleResponse(updatedRole),
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+    deleteWorkspaceRole = async (req: Request, res: Response) => {
+        const { id, roleId } = req.params;
+        if (!id || !roleId) {
+            throw new BadRequestError('Workspace id and Role id are required');
+        }
+        const message = await this.workspaceRoleService.deleteRole(id, roleId);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Delete workspace role successfully',
             message,
             StatusCodes.OK
         )

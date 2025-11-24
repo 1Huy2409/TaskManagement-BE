@@ -1,8 +1,9 @@
-import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { DateTimeEntity } from "./base/date-time.entity";
 import { WorkspaceMember } from "./workspace-member.entity";
 import { BoardMember } from "./board-member.entity";
 import { RolePermission } from "./role-permission.entity";
+import { Workspace } from "./workspace.entity";
 
 export enum RoleScope {
     GLOBAL = 'global',
@@ -10,7 +11,7 @@ export enum RoleScope {
     BOARD = 'board'
 }
 @Entity('roles')
-@Unique('UQ_role_name_scope', ['name', 'scope'])
+@Unique('UQ_role_name_scope_workspace', ['name', 'scope', 'workspaceId'])
 export class Role extends DateTimeEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string
@@ -36,4 +37,10 @@ export class Role extends DateTimeEntity {
     @OneToMany(() => BoardMember, (member) => member.role)
     boardMembers: BoardMember[]
 
+    @Column({ type: 'uuid', nullable: true })
+    workspaceId: string | null;
+
+    @ManyToOne(() => Workspace, { nullable: true, onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'workspaceId' })
+    workspace: Workspace | null;
 }
