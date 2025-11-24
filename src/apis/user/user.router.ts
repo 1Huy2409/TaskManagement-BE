@@ -23,6 +23,16 @@ export default function userRouter(userController: UserController): Router {
     router.get('/', asyncHandler(userController.findAll));
 
     userRegistry.registerPath({
+        method: 'get',
+        path: '/api/v1/users/me',
+        tags: ['User'],
+        security: [{ bearerAuth: [] }],
+        responses: createApiResponse(UserResponseSchema, 'Success'),
+    });
+
+    router.get('/me', asyncHandler(checkAuthentication), asyncHandler(userController.getMe))
+
+    userRegistry.registerPath({
         method: 'patch',
         path: '/api/v1/users/profile',
         tags: ['User'],
@@ -73,6 +83,15 @@ export default function userRouter(userController: UserController): Router {
         responses: createApiResponse(UserResponseSchema, 'Success')
     })
     router.get('/:id', asyncHandler(userController.findByID))
+
+    userRegistry.registerPath({
+        method: 'get',
+        path: '/api/v1/users/me',
+        tags: ['User'],
+        security: [{ bearerAuth: [] }],
+        responses: createApiResponse(UserResponseSchema, 'Success')
+    })
+    router.get('/me', asyncHandler(checkAuthentication), asyncHandler(userController.getMe))
 
     return router;
 }
