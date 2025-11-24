@@ -6,7 +6,7 @@ import { userRegistry } from "@/apis/user/user.router";
 import { workspaceRegistry } from "@/apis/workspace/workspace.router";
 import { OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 
-export function generateOpenAPIDocument() {
+export function generateOpenAPIDocument(): ReturnType<InstanceType<typeof OpenApiGeneratorV3>['generateDocument']> {
     const registry = new OpenAPIRegistry([userRegistry, healthCheckRegistry, authRegistry, workspaceRegistry, boardRegistry, joinLinkRegistry])
     registry.registerComponent('securitySchemes', 'bearerAuth', {
         type: 'http',

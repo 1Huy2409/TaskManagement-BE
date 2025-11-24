@@ -25,8 +25,8 @@ export const uploadImageBuffer = async (
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 resource_type: 'image',
-                folder: options?.folder,
-                public_id: options?.public_id,
+                ...(options?.folder && { folder: options.folder }),
+                ...(options?.public_id && { public_id: options.public_id }),
                 overwrite: options?.overwrite ?? true,
             },
             (error, result) => {

@@ -3,7 +3,7 @@ import { config } from "dotenv";
 config();
 import express from "express";
 import cors from 'cors';
-import type { Request, Response } from "express";
+import type { Express, Request, Response } from "express";
 import { AppDataSource } from "./config/db.config";
 import { buildOpenAPIRouter } from "./api-docs/openAPIRouter";
 import mainRouter from "./common/router/index.router";
@@ -15,7 +15,7 @@ import "./apis/auth/strategy/jwt.strategy";
 import cookieParser from "cookie-parser";
 
 const port = parseInt(process.env.PORT || '8000');
-const app = express();
+const app: Express = express();
 app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true

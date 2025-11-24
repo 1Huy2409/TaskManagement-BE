@@ -32,9 +32,14 @@ export default class UserService {
             throw new NotFoundError(`User with ID ${id} is not found!`);
         }
 
-        const updateData: Partial<User> = {
-            ...payload
-        };
+        const updateData: Partial<User> = Object.entries(payload)
+            .reduce((acc, [key, value]) => {
+                if (value !== undefined) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (acc as any)[key] = value;
+                }
+                return acc;
+            }, {} as Partial<User>);
 
 
         const updated = await this.userRepository.update(id, updateData);
