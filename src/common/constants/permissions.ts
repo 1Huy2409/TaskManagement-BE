@@ -35,4 +35,4 @@ export const PERMISSIONS = {
     COMMENT_DELETE: 'comment:delete',
 } as const;
 
-export type PermissionAction = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+export type PermissionKey = typeof PERMISSIONS[keyof typeof PERMISSIONS];
