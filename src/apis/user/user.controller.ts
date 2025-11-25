@@ -59,6 +59,21 @@ export default class UserController {
         return handleServiceResponse(serviceResponse, res);
     }
 
+    getMe = async (req: Request, res: Response) => {
+        const id = this.getUserIdFromAuth(req);
+        if (!id) {
+            throw new AuthFailureError('Authentication failure');
+        }
+        const data = await this.userService.findById(id);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Get user by ID successfullly!',
+            data,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+
     updateProfile = async (req: Request, res: Response) => {
         const id = this.getUserIdFromAuth(req);
         if (!id) {

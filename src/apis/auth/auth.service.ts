@@ -1,4 +1,4 @@
-import redisClient  from '@/config/redis.config';
+import redisClient from '@/config/redis.config';
 
 import { toUserResponse } from './../user/user.mapper';
 import { CompleteRegisterForm, PostRegisterSchema, RegisterForm, RequestOTPForm, RequestOTPResponse, VerifyOTPForm, ResetPasswordForm, ResetPasswordFormHaveLoggedIn } from './schemas/auth.schema';
@@ -25,7 +25,7 @@ export default class AuthService {
         this.otpService = new OtpService()
     }
 
-    login = async (credentials: { username: string, password: string }): Promise<{ accessToken: string, refreshToken: string, user: UserResponse }> => {
+    login = async (credentials: { username: string, password: string }): Promise<{ accessToken: string, refreshToken: string }> => {
         const { username, password } = credentials
         console.log(username);
         const user = await this.userRepository.findByUsername(username);
@@ -42,8 +42,7 @@ export default class AuthService {
         const payload = { sub: user.id, username: user.username, email: user.email }
         const accessToken = signAccessToken(payload);
         const refreshToken = signRefreshToken(payload);
-        const userResponse: UserResponse = toUserResponse(user)
-        return { accessToken, refreshToken, user: userResponse }
+        return { accessToken, refreshToken }
     }
     register = async (userData: RegisterForm): Promise<RequestOTPResponse> => {
         const { fullname, username, email, password } = userData;
@@ -130,9 +129,9 @@ export default class AuthService {
             throw new ConflictRequestError(`This email exist in this application!`)
         }
         const otp = crypto.randomInt(100000, 999999).toString();
-       // 2. Dùng Redis key thay vì DB
+        // 2. Dùng Redis key thay vì DB
         const redisKey = `otp:${email}`;
-        
+
         // Lưu OTP và trạng thái chưa xác thực
         const otpData: OtpRedisData = {
             otp: otp,
@@ -249,7 +248,7 @@ export default class AuthService {
         }
     }
 
-   
+
 
     refreshToken = async (req: Request): Promise<{ newAccessToken: string, newRefreshToken: string }> => {
         const refreshToken = req.cookies.refreshToken;
@@ -267,20 +266,20 @@ export default class AuthService {
     }
     resetPasswordHaveLoggedIn = async (data: ResetPasswordFormHaveLoggedIn): Promise<{ message: string, email: string, user: UserResponse }> => {
         const rawEmail = data.email;
-        const email = rawEmail.trim().toLowerCase();        
+        const email = rawEmail.trim().toLowerCase();
         const { currentPassword, newPassword } = data;
         if (!email) {
             throw new BadRequestError('Email is required.');
         }
         const user = await this.userRepository.findByEmail(email);
         if (!user) throw new NotFoundError('User not found!');
-        
+
         const isCurrentPasswordValid = await comparePassword(currentPassword, user.password);
         if (!isCurrentPasswordValid) {
             throw new BadRequestError('Current password is incorrect.');
         }
         user.password = await hashPassword(newPassword);
-        const updatedUser = await this.userRepository.update(user.id, user);        
+        const updatedUser = await this.userRepository.update(user.id, user);
         return {
             message: 'Password has been reset successfully.',
             email,

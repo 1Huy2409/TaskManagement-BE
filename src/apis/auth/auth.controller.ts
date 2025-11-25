@@ -5,7 +5,7 @@ import { handleServiceResponse } from "@/common/utils/httpHandler";
 import { ResponseStatus, ServiceResponse } from "@/common/models/service.response";
 import { StatusCodes } from "http-status-codes";
 import { User } from "@/common/entities/user.entity";
-import { CompleteRegisterForm, RegisterForm, RequestOTPForm, VerifyOTPForm, ResetPasswordForm, ResetPasswordFormHaveLoggedIn} from "./schemas/auth.schema";
+import { CompleteRegisterForm, RegisterForm, RequestOTPForm, VerifyOTPForm, ResetPasswordForm, ResetPasswordFormHaveLoggedIn } from "./schemas/auth.schema";
 import { AuthFailureError } from '@/common/handler/error.response';
 
 export default class AuthController {
@@ -19,7 +19,7 @@ export default class AuthController {
             password: req.body.password
         }
         console.log(data)
-        const { accessToken, refreshToken, user } = await this.authService.login(data)
+        const { accessToken, refreshToken } = await this.authService.login(data)
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: false,
@@ -30,8 +30,7 @@ export default class AuthController {
             ResponseStatus.Sucess,
             'Login successfully!',
             {
-                accessToken: accessToken,
-                user: user
+                accessToken: accessToken
             },
             StatusCodes.OK
         )
@@ -116,8 +115,8 @@ export default class AuthController {
         );
         return handleServiceResponse(serviceResponse, res);
     }
-   
-    
+
+
 
     refreshToken = async (req: Request, res: Response) => {
         const { newAccessToken, newRefreshToken } = await this.authService.refreshToken(req)
