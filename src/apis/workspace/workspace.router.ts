@@ -1,7 +1,7 @@
 import { Router } from "express";
 import WorkspaceController from "./workspace.controller";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { ListWorkspaceResponseSchema, PatchWorkspaceMemberRoleRequest, PatchWorkspaceRequest, PostWorkspaceMemberRequest, PostWorkspaceRequest, WorkspaceMemberResponseSchema, WorkspaceResponseSchema } from "./schemas";
+import { ListWorkspaceResponseSchema, PatchWorkspaceMemberRoleRequest, PatchWorkspaceRequest, PostWorkspaceMemberRequest, PostWorkspaceRequest, WorkspaceMemberResponseSchema, WorkspaceResponseSchema, PostWorkspaceRoleRequest, PatchWorkspaceRoleRequest, WorkspaceRoleResponseSchema, ListWorkspaceRoleResponseSchema } from "./schemas";
 import { asyncHandler } from "@/common/middleware/asyncHandler";
 import { z } from 'zod'
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilder";
@@ -369,5 +369,108 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         asyncHandler(checkAuthentication),
         asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_DELETE)),
         asyncHandler(workspaceController.deleteBoardInWorkspace))
+
+    // manage workspace roles
+    workspaceRegistry.registerPath({
+        method: 'get',
+        path: '/api/v1/workspaces/{id}/roles',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            })
+        },
+        responses: createApiResponse(ListWorkspaceRoleResponseSchema, 'Success')
+    })
+    router.get('/:id/roles',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_MANAGE_ROLES)),
+        asyncHandler(workspaceController.getWorkspaceRoles)
+    )
+
+    workspaceRegistry.registerPath({
+        method: 'post',
+        path: '/api/v1/workspaces/{id}/roles',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                })
+            }),
+            body: PostWorkspaceRoleRequest
+        },
+        responses: createApiResponse(WorkspaceRoleResponseSchema, 'Success')
+    })
+    router.post('/:id/roles',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_MANAGE_ROLES)),
+        asyncHandler(workspaceController.addWorkspaceRole)
+    )
+
+    workspaceRegistry.registerPath({
+        method: 'patch',
+        path: '/api/v1/workspaces/{id}/roles/{roleId}',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                }),
+                roleId: z.uuid().openapi({
+                    example: 'c3d4e5f6-7g8h-9i0j-1k2l-m3n4o5p6q7r8',
+                    description: 'Role UUID',
+                    format: 'uuid'
+                })
+            }),
+            body: PatchWorkspaceRoleRequest
+        },
+        responses: createApiResponse(WorkspaceRoleResponseSchema, 'Success')
+    })
+    router.patch('/:id/roles/:roleId',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_MANAGE_ROLES)),
+        asyncHandler(workspaceController.updateWorkspaceRole)
+    )
+
+    workspaceRegistry.registerPath({
+        method: 'delete',
+        path: '/api/v1/workspaces/{id}/roles/{roleId}',
+        tags: ['Workspace'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Workspace UUID',
+                    format: 'uuid'
+                }),
+                roleId: z.uuid().openapi({
+                    example: 'c3d4e5f6-7g8h-9i0j-1k2l-m3n4o5p6q7r8',
+                    description: 'Role UUID',
+                    format: 'uuid'
+                })
+            })
+        },
+        responses: createApiResponse(z.object({
+            message: z.string()
+        }), 'Success')
+    })
+    router.delete('/:id/roles/:roleId',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_MANAGE_ROLES)),
+        asyncHandler(workspaceController.deleteWorkspaceRole)
+    )
     return router
 }

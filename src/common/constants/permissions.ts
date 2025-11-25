@@ -6,6 +6,7 @@ export const PERMISSIONS = {
     WORKSPACE_DELETE: 'workspace:delete',
     WORKSPACE_MANAGE_MEMBERS: 'workspace:manage_members',
     WORKSPACE_VIEW_MEMBERS: 'workspace:view_members',
+    WORKSPACE_MANAGE_ROLES: 'workspace:manage_roles',
 
     // Board permissions
     BOARD_VIEW: 'board:view',
@@ -35,4 +36,4 @@ export const PERMISSIONS = {
     COMMENT_DELETE: 'comment:delete',
 } as const;
 
-export type PermissionAction = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+export type PermissionKey = typeof PERMISSIONS[keyof typeof PERMISSIONS];

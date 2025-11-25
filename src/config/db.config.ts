@@ -14,7 +14,7 @@ import { Role } from "../common/entities/role.entity";
 import { Permission } from "../common/entities/permission.entity";
 import { RolePermission } from "../common/entities/role-permission.entity";
 import { config } from "dotenv";
-import { WorkspaceJoinLink } from "@/common/entities/workspace-join-link.entity";
+import { WorkspaceJoinLink } from "../common/entities/workspace-join-link.entity";
 config();
 export const AppDataSource = new DataSource({
     type: 'postgres',

@@ -30,6 +30,11 @@ import { JoinLinkRepository } from '@/apis/joinlink/repositories/join-link.repos
 import { JoinLinkService } from '@/apis/joinlink/join-link.service'
 import { JoinLinkController } from '@/apis/joinlink/join-link.controller'
 import joinLinkRouter from '@/apis/joinlink/join-link.router'
+import { Permission } from '../entities/permission.entity'
+import { PermissionRepository } from '@/apis/permission/repositories/permission.repository'
+import { RolePermissionRepository } from '@/apis/role-permission/repositories/role-permission.repository'
+import { RolePermission } from '../entities/role-permission.entity'
+import { WorkspaceRoleService } from '@/apis/workspace/workspace-role.service'
 
 const mainRouter: Router = express.Router()
 const initHealthCheckModule = () => {
@@ -62,8 +67,13 @@ const initWorkspaceModule = () => {
     const boardRepository = new BoardRepository(boardOrmRepo);
     const roleOrmRepo = AppDataSource.getRepository(Role);
     const roleRepository = new RoleRepository(roleOrmRepo);
+    const permissionOrmRepo = AppDataSource.getRepository(Permission);
+    const permissionRepository = new PermissionRepository(permissionOrmRepo);
+    const rolePermissionOrmRepo = AppDataSource.getRepository(RolePermission);
+    const rolePermissionRepository = new RolePermissionRepository(rolePermissionOrmRepo);
     const workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository, boardRepository, roleRepository);
-    const workspaceController = new WorkspaceController(workspaceService);
+    const workspaceRoleService = new WorkspaceRoleService(roleRepository, permissionRepository, rolePermissionRepository);
+    const workspaceController = new WorkspaceController(workspaceService, workspaceRoleService);
 
     mainRouter.use('/workspaces', workspaceRouter(workspaceController));
 }

@@ -1,10 +1,11 @@
 import { AuthorizationHelper } from "../utils/authorizationHelper";
 import { NextFunction, Request, Response } from "express";
 import { AuthFailureError, BadRequestError, ForbiddenError } from "../handler/error.response";
+import { PermissionKey } from "../constants/permissions";
 
 const authorizationHelper = new AuthorizationHelper();
 
-export const checkWorkspacePermission = (requiredPermission: string) => {
+export const checkWorkspacePermission = (requiredPermission: PermissionKey) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
             const userId = req.user?.id
@@ -30,7 +31,7 @@ export const checkWorkspacePermission = (requiredPermission: string) => {
         }
     }
 }
-export const checkBoardPermission = (requiredPermission: string) => {
+export const checkBoardPermission = (requiredPermission: PermissionKey) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
             const userId = req.user?.id

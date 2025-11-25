@@ -1,8 +1,13 @@
 import { Role, RoleScope } from "@/common/entities/role.entity";
-import { IBaseRepository } from "@/common/repositories/base.repository.interface";
 
 export interface IRoleRepository {
-    // Define methods for role repository
     findByName(name: string, scope: RoleScope): Promise<Role | null>;
-    findById(id: string, scope: RoleScope): Promise<Role | null>;
+    findById(id: string): Promise<Role | null>;
+    findByIdWithRelations(id: string): Promise<Role | null>;
+    findByNameAndWorkspaceId(name: string, scope: RoleScope, workspaceId: string): Promise<Role | null>;
+    findByScopeAndWorkspaceId(scope: RoleScope, workspaceId: string | null): Promise<Role[]>;
+    findWorkspaceRoles(workspaceId: string): Promise<Role[]>;
+    create(roleData: Partial<Role>): Role;
+    save(role: Role): Promise<Role>;
+    delete(roleId: string): Promise<void>;
 }

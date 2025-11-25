@@ -157,8 +157,8 @@ export default class WorkspaceService {
         if (existingMember) {
             throw new ConflictRequestError('User is already a member of this workspace');
         }
-        const role = await this.roleRepository.findById(roleId, RoleScope.WORKSPACE);
-        if (!role) {
+        const role = await this.roleRepository.findById(roleId);
+        if (!role || role.scope !== RoleScope.WORKSPACE) {
             throw new NotFoundError('Invalid role ID or role is not for workspace');
         }
         await this.workspaceMemberRespository.create({
@@ -191,8 +191,8 @@ export default class WorkspaceService {
                 member: toWorkspaceMemberResponse(existingMember)
             }
         }
-        const role = await this.roleRepository.findById(data.roleId, RoleScope.WORKSPACE);
-        if (!role) {
+        const role = await this.roleRepository.findById(data.roleId);
+        if (!role || role.scope !== RoleScope.WORKSPACE) {
             throw new NotFoundError('Invalid role ID or role is not for workspace');
         }
         console.log("Role to assign:", role.name);
