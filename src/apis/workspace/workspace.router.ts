@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilder";
 import { BoardResponseSchema, ListBoardResponseSchema, PatchBoardRequest, PostBoardRequest } from "../board/schemas";
 import { PERMISSIONS } from "@/common/constants/permissions";
-import { checkBoardPermission, checkWorkspaceOwner, checkWorkspacePermission } from "@/common/middleware/authorization";
+import { checkBoardPermission, checkWorkspacePermission } from "@/common/middleware/authorization";
 import { checkAuthentication } from "@/common/middleware/authentication";
 
 export const workspaceRegistry = new OpenAPIRegistry()
@@ -193,29 +193,6 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         asyncHandler(checkAuthentication),
         asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_VIEW_MEMBERS)),
         asyncHandler(workspaceController.getWorkspaceMembers)
-    )
-
-    workspaceRegistry.registerPath({
-        method: 'post',
-        path: '/api/v1/workspaces/{id}/members',
-        tags: ['Workspace'],
-        security: [{ bearerAuth: [] }],
-        request: {
-            params: z.object({
-                id: z.uuid().openapi({
-                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
-                    description: 'Workspace UUID',
-                    format: 'uuid'
-                })
-            }),
-            body: PostWorkspaceMemberRequest
-        },
-        responses: createApiResponse(WorkspaceMemberResponseSchema, 'Success')
-    })
-    router.post('/:id/members',
-        asyncHandler(checkAuthentication),
-        asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_MANAGE_MEMBERS)),
-        asyncHandler(workspaceController.addMemberToWorkspace)
     )
 
     workspaceRegistry.registerPath({
