@@ -27,22 +27,40 @@ export class RbacService {
         permissionAction: PermissionKey,
         context?: { workspaceId?: string; boardId?: string }
     ): Promise<boolean> {
+        const startTime = process.hrtime.bigint();
+
         const cachedDecision = await this.rbacCacheService.getCachePermissionCheck(
             userId,
             permissionAction,
             context || {}
         );
+
         if (cachedDecision !== null) {
-            console.log('Cached Hit:', cachedDecision);
+            const endTime = process.hrtime.bigint();
+            const duration = Number(endTime - startTime) / 1_000_000;
+            console.log(`   ✅ [CACHE HIT] Permission check from cache: ${duration.toFixed(3)} ms`);
+            console.log(`      User: ${userId}, Permission: ${permissionAction}, Result: ${cachedDecision}`);
             return cachedDecision;
         }
+
+        console.log(`   ❌ [CACHE MISS] Computing permission from database...`);
+        const dbStartTime = process.hrtime.bigint();
         const result = await this.computePermission(userId, permissionAction, context);
+        const dbEndTime = process.hrtime.bigint();
+        const dbDuration = Number(dbEndTime - dbStartTime) / 1_000_000;
+
         await this.rbacCacheService.cachePermissionCheck(
             userId,
             permissionAction,
             context || {},
             result
         );
+
+        const totalEndTime = process.hrtime.bigint();
+        const totalDuration = Number(totalEndTime - startTime) / 1_000_000;
+        console.log(`      DB Query: ${dbDuration.toFixed(3)} ms, Total: ${totalDuration.toFixed(3)} ms`);
+        console.log(`      User: ${userId}, Permission: ${permissionAction}, Result: ${result}`);
+
         return result;
     }
     private async computePermission(
@@ -108,14 +126,22 @@ export class RbacService {
         context: { workspaceId?: string; boardId?: string }
     ): Promise<Membership[]> {
         const { workspaceId, boardId } = context;
+        const startTime = process.hrtime.bigint();
+
         const cachedMemberships = await this.rbacCacheService.getCacheMembership(
             userId,
             context
         );
+
         if (cachedMemberships !== null) {
-            console.log('Membership Cached Hit');
+            const endTime = process.hrtime.bigint();
+            const duration = Number(endTime - startTime) / 1_000_000;
+            console.log(`   ✅ [CACHE HIT] Membership from cache: ${duration.toFixed(3)} ms`);
             return cachedMemberships;
         }
+
+        console.log(`   ❌ [CACHE MISS] Fetching membership from database...`);
+        const dbStartTime = process.hrtime.bigint();
         const memberships: Membership[] = [];
         if (boardId) {
             const boardMember = await this.boardMemberRepo.findOne({
@@ -144,11 +170,16 @@ export class RbacService {
                 });
             }
         }
+        const dbEndTime = process.hrtime.bigint();
+        const dbDuration = Number(dbEndTime - dbStartTime) / 1_000_000;
+
         await this.rbacCacheService.cacheMembership(
             userId,
             context,
             memberships
         );
+
+        console.log(`      DB Query: ${dbDuration.toFixed(3)} ms`);
         return memberships;
     }
     private async isWorkspaceOwnerCache(

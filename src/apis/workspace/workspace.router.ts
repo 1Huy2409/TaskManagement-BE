@@ -9,6 +9,7 @@ import { BoardResponseSchema, ListBoardResponseSchema, PatchBoardRequest, PostBo
 import { PERMISSIONS } from "@/common/constants/permissions";
 import { checkBoardPermission, checkWorkspacePermission } from "@/common/middleware/authorization";
 import { checkAuthentication } from "@/common/middleware/authentication";
+import { performanceLogger } from "@/common/middleware/performanceLogger";
 
 export const workspaceRegistry = new OpenAPIRegistry()
 workspaceRegistry.register('Workspace', WorkspaceResponseSchema)
@@ -145,6 +146,7 @@ export default function workspaceRouter(workspaceController: WorkspaceController
         responses: createApiResponse(WorkspaceResponseSchema, 'Success'),
     })
     router.patch('/:id',
+        performanceLogger('PATCH /api/v1/workspaces/:id'),
         asyncHandler(checkAuthentication),
         asyncHandler(checkWorkspacePermission(PERMISSIONS.WORKSPACE_UPDATE)),
         asyncHandler(workspaceController.update)
