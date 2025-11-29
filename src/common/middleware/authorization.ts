@@ -58,23 +58,3 @@ export const checkBoardPermission = (requiredPermission: PermissionKey) => {
         }
     }
 }
-export const checkWorkspaceOwner = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const userId = req.user?.id
-        if (!userId) {
-            throw new AuthFailureError('User not authenticated', 401);
-        }
-        const workspaceId = req.params.workspaceId || req.params.id || req.body.workspaceId;
-        if (!workspaceId) {
-            throw new BadRequestError('Workspace ID is required');
-        }
-        const isOwner = await authorizationHelper.isWorkspaceOwner(userId, workspaceId);
-        if (!isOwner) {
-            throw new ForbiddenError('You are not the owner of this workspace');
-        }
-        next();
-    }
-    catch (error) {
-        next(error)
-    }
-}

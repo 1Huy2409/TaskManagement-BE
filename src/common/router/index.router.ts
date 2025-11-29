@@ -35,6 +35,8 @@ import { PermissionRepository } from '@/apis/permission/repositories/permission.
 import { RolePermissionRepository } from '@/apis/role-permission/repositories/role-permission.repository'
 import { RolePermission } from '../entities/role-permission.entity'
 import { WorkspaceRoleService } from '@/apis/workspace/workspace-role.service'
+import { RbacCacheService } from '../rbac/rbac.cache.service'
+import { RbacService } from '../rbac/rbac.service'
 
 const mainRouter: Router = express.Router()
 const initHealthCheckModule = () => {
@@ -71,8 +73,9 @@ const initWorkspaceModule = () => {
     const permissionRepository = new PermissionRepository(permissionOrmRepo);
     const rolePermissionOrmRepo = AppDataSource.getRepository(RolePermission);
     const rolePermissionRepository = new RolePermissionRepository(rolePermissionOrmRepo);
-    const workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository, boardRepository, roleRepository);
-    const workspaceRoleService = new WorkspaceRoleService(roleRepository, permissionRepository, rolePermissionRepository);
+    const rbacService = new RbacService();
+    const workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository, boardRepository, roleRepository, rbacService);
+    const workspaceRoleService = new WorkspaceRoleService(roleRepository, permissionRepository, rolePermissionRepository, rbacService);
     const workspaceController = new WorkspaceController(workspaceService, workspaceRoleService);
 
     mainRouter.use('/workspaces', workspaceRouter(workspaceController));
@@ -86,7 +89,8 @@ const initJoinLinkModule = () => {
     const workspaceRepository = new WorkspaceRepository(workspaceOrmRepo);
     const workspaceMemberRepository = new WorkspaceMemberRepository(workspaceMemberOrmRepo);
     const roleRepository = new RoleRepository(roleOrmRepo);
-    const joinLinkService = new JoinLinkService(joinLinkRepository, workspaceRepository, workspaceMemberRepository, roleRepository);
+    const rbacService = new RbacService();
+    const joinLinkService = new JoinLinkService(joinLinkRepository, workspaceRepository, workspaceMemberRepository, roleRepository, rbacService);
     const joinLinkController = new JoinLinkController(joinLinkService);
 
     mainRouter.use('/workspaces', joinLinkRouter(joinLinkController))

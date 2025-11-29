@@ -14,13 +14,15 @@ import { IWorkspaceMemberRepository } from './repositories/workspace-member.repo
 import { IBoardRepository } from '../board/repositories/board.repository.interface';
 import { IRoleRepository } from '../role/repositories/role.repository.interface';
 import { toWorkspaceMemberResponse } from './mapper/workspace-member.mapper';
+import { RbacService } from '@/common/rbac/rbac.service';
 
 export default class WorkspaceService {
     constructor(
         private workspaceRepository: IWorkspaceRepository,
         private workspaceMemberRespository: IWorkspaceMemberRepository,
         private boardRepository: IBoardRepository,
-        private roleRepository: IRoleRepository
+        private roleRepository: IRoleRepository,
+        private rbacService: RbacService
     ) { }
     // base crud for workspace
     findAll = async (userId: string): Promise<WorkspaceResponse[]> => {
@@ -133,6 +135,7 @@ export default class WorkspaceService {
         workspace.isActive = false;
         workspace.boards.forEach(board => board.isActive = false);
         await this.workspaceRepository.update(id, workspace);
+        await this.rbacService.onWorkspaceDeleted(id);
         return {
             message: 'Delete workspace successfully!'
         }
@@ -146,31 +149,6 @@ export default class WorkspaceService {
         return workspaceMember.map(toWorkspaceMemberResponse);
     }
 
-    // need remaking
-    addMemberToWorkspace = async (data: AddWorkspaceMemberSchema, workspaceId: string): Promise<{ message: string }> => {
-        const { userId, roleId } = data;
-        const workspace = await this.workspaceRepository.findById(workspaceId);
-        if (!workspace) {
-            throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
-        }
-        const existingMember = await this.workspaceMemberRespository.findByWorkspaceAndUserId(workspaceId, userId);
-        if (existingMember) {
-            throw new ConflictRequestError('User is already a member of this workspace');
-        }
-        const role = await this.roleRepository.findById(roleId);
-        if (!role || role.scope !== RoleScope.WORKSPACE) {
-            throw new NotFoundError('Invalid role ID or role is not for workspace');
-        }
-        await this.workspaceMemberRespository.create({
-            role,
-            userId,
-            workspaceId
-        });
-        // should return current list member after add
-        return {
-            message: 'Add member to workspace successfully!'
-        }
-    }
     updateMemberRole = async (workspaceId: string, userId: string, data: UpdateWorkspaceMemberRoleSchema, currentUserId: string): Promise<{ message: string, member: WorkspaceMemberResponse }> => {
         const workspace = await this.workspaceRepository.findById(workspaceId);
         if (!workspace) {
@@ -202,6 +180,7 @@ export default class WorkspaceService {
         existingMember.roleId = data.roleId;
         existingMember.role = role;
         const updatedMember: WorkspaceMember = await this.workspaceMemberRespository.update(existingMember.id, existingMember);
+        await this.rbacService.onWorkspaceMemberRoleChanged(workspaceId, userId);
         return {
             message: 'Update member role successfully!',
             member: toWorkspaceMemberResponse(updatedMember)
@@ -220,6 +199,7 @@ export default class WorkspaceService {
             throw new NotFoundError('User is not a member of this workspace');
         }
         await this.workspaceMemberRespository.delete(existingMember);
+        await this.rbacService.onUserRemovedFromWorkspace(userId, workspaceId);
         return {
             message: 'Remove member from workspace successfully!'
         }
@@ -274,6 +254,7 @@ export default class WorkspaceService {
         }
         board.isActive = false;
         await this.boardRepository.update(board.id, board);
+        await this.rbacService.onBoardDeleted(boardId);
         return {
             message: 'Delete board successfully!'
         }

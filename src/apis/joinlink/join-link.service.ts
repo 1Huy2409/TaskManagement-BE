@@ -9,6 +9,7 @@ import { toJoinLinkResponse } from "./mapper/join-link.mapper";
 import { WorkspaceJoinLink } from "@/common/entities/workspace-join-link.entity";
 import { RoleScope } from "@/common/entities/role.entity";
 import { Workspace } from "@/common/entities/workspace.entity";
+import { RbacService } from "@/common/rbac/rbac.service";
 
 export class JoinLinkService {
     constructor(
@@ -16,6 +17,7 @@ export class JoinLinkService {
         private readonly workspaceRepository: IWorkspaceRepository,
         private readonly workspaceMemberRepository: IWorkspaceMemberRepository,
         private readonly roleRepository: IRoleRepository,
+        private readonly rbacService: RbacService
     ) { }
 
     createJoinLink = async (workspaceId: string,
@@ -60,6 +62,7 @@ export class JoinLinkService {
             userId,
             roleId: memberRole.id,
         });
+        await this.rbacService.onUserAddedToWorkspace(userId, joinLink.workspaceId);
         await this.joinLinkRepository.incrementUsedCount(joinLink.id);
         if (joinLink.maxUses && joinLink.usedCount + 1 >= joinLink.maxUses) {
             joinLink.isActive = false;

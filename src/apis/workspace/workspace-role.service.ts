@@ -1,21 +1,17 @@
-import { AppDataSource } from "@/config/db.config";
-import { Role, RoleScope } from "@/common/entities/role.entity";
-import { Permission } from "@/common/entities/permission.entity";
-import { RolePermission } from "@/common/entities/role-permission.entity";
+import { RoleScope } from "@/common/entities/role.entity";
 import { CreateWorkspaceRoleDto, UpdateWorkspaceRoleDto } from "./dto/workspace-role.dto";
 import { BadRequestError, ForbiddenError, NotFoundError } from "@/common/handler/error.response";
-import { RoleRepository } from "../role/repositories/role.repository";
-import { PermissionRepository } from "../permission/repositories/permission.repository";
-import { RolePermissionRepository } from "../role-permission/repositories/role-permission.repository";
 import { IRoleRepository } from "../role/repositories/role.repository.interface";
 import { IPermissionRepository } from "../permission/repositories/permission.repository.interface";
 import { IRolePermissionRepository } from "../role-permission/repositories/role-permission.repository.interface";
+import { RbacService } from "@/common/rbac/rbac.service";
 
 export class WorkspaceRoleService {
     constructor(
         private roleRepo: IRoleRepository,
         private permissionRepo: IPermissionRepository,
-        private rolePermissionRepo: IRolePermissionRepository
+        private rolePermissionRepo: IRolePermissionRepository,
+        private rbacService: RbacService
     ) { }
 
     async getRoles(workspaceId: string) {
@@ -101,6 +97,7 @@ export class WorkspaceRoleService {
 
                 await this.rolePermissionRepo.save(rolePermissions);
             }
+            await this.rbacService.onRolePermissionsUpdated(roleId);
         }
 
         const updatedRole = await this.roleRepo.findByIdWithRelations(role.id);
@@ -128,5 +125,6 @@ export class WorkspaceRoleService {
         }
 
         await this.roleRepo.delete(roleId);
+        await this.rbacService.onRolePermissionsUpdated(roleId);
     }
 }
