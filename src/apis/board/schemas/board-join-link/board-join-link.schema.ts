@@ -2,12 +2,12 @@ import { ZodRequestBody } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
 export const CreateBoardJoinLinkSchema = z.object({
-    expiresIn: z.number().min(1).max(365).optional().default(7).openapi({
-        description: 'Number of days until the link expires',
+    expiresIn: z.number().min(1).max(365).nullable().optional().openapi({
+        description: 'Number of days until the link expires. Leave empty or null for permanent link.',
         example: 7
     }),
-    maxUses: z.number().min(1).optional().openapi({
-        description: 'Maximum number of times the link can be used',
+    maxUses: z.number().min(1).nullable().optional().openapi({
+        description: 'Maximum number of times the link can be used. Leave empty or null for unlimited uses.',
         example: 10
     }),
 });
@@ -47,7 +47,7 @@ export const InviteByEmailSchema = z.object({
         example: 'user@example.com'
     }),
     roleId: z.string().uuid().optional().openapi({
-        description: 'Role ID to assign to the invited member (defaults to board_member)',
+        description: 'Role ID to assign to the invited member. If not provided, defaults to board_member role.',
         example: 'd290f1ee-6c54-4b01-90e6-d701748f0851'
     })
 });
@@ -84,13 +84,13 @@ export const BoardJoinLinkResponseSchema = z.object({
         example: 'https://yourapp.com/board/join/abc123token',
         description: 'Full Join Link URL'
     }),
-    expiresAt: z.date().openapi({
+    expiresAt: z.date().nullable().openapi({
         example: '2024-12-31T23:59:59.000Z',
-        description: 'Expiration date of the join link'
+        description: 'Expiration date of the join link. Null means permanent link.'
     }),
     maxUses: z.number().nullable().openapi({
         example: 10,
-        description: 'Maximum number of uses for the join link'
+        description: 'Maximum number of uses for the join link. Null means unlimited.'
     }),
     usedCount: z.number().openapi({
         example: 3,
@@ -112,7 +112,7 @@ export interface BoardJoinLinkResponse {
     id: string;
     token: string;
     fullLink: string;
-    expiresAt: Date;
+    expiresAt: Date | null;
     maxUses: number | null;
     usedCount: number;
     isActive: boolean;

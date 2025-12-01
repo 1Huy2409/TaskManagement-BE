@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const toBoardJoinLinkResponse = (joinLink: BoardJoinLink): BoardJoinLinkResponse => {
-    const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+    const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
     return {
         id: joinLink.id,
         token: joinLink.token,

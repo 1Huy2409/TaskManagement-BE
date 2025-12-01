@@ -92,18 +92,23 @@ export default class BoardService {
         }
 
         const token = nanoid(10);
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + data.expiresIn);
+        
+        // Calculate expiration date if expiresIn is provided
+        let expiresAt: Date | null = null;
+        if (data.expiresIn) {
+            expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + data.expiresIn);
+        }
 
         const joinLink = await this.boardJoinLinkRepository.create({
             boardId,
             token,
             createdBy: userId,
-            expiresAt,
-            maxUses: data.maxUses || 10,
+            expiresAt: expiresAt as any,
+            maxUses: data.maxUses !== undefined ? data.maxUses : null,
             usedCount: 0,
             isActive: true,
-        });
+        } as any);
 
         return toBoardJoinLinkResponse(joinLink);
     }
@@ -195,12 +200,16 @@ export default class BoardService {
     }
 
     private async validateJoinLink(joinLink: BoardJoinLink): Promise<void> {
-        if (new Date() > joinLink.expiresAt) {
-            throw new BadRequestError('Join link has expired');
-        }
         if (!joinLink.isActive) {
             throw new BadRequestError('Join link is inactive');
         }
+        
+        // Only check expiration if expiresAt is set
+        if (joinLink.expiresAt && new Date() > joinLink.expiresAt) {
+            throw new BadRequestError('Join link has expired');
+        }
+        
+        // Only check max uses if it's set
         if (joinLink.maxUses && joinLink.usedCount >= joinLink.maxUses) {
             throw new BadRequestError('Join link has reached its maximum uses');
         }
