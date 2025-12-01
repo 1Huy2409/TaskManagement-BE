@@ -187,4 +187,19 @@ export default class BoardController {
         )
         return handleServiceResponse(serviceResponse, res);
     }
+
+    getBoardMembers = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) {
+            throw new BadRequestError('Board id is required');
+        }
+        const members = await this.boardService.getBoardMembers(id);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Get board members successfully',
+            members,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
 }

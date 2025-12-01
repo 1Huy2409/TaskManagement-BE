@@ -168,6 +168,52 @@ export default function boardRouter(boardController: BoardController): Router {
         asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_VIEW_MEMBERS)),
         asyncHandler(boardController.getBoardJoinLinks))
 
+    // Get board members
+    boardRegistry.registerPath({
+        method: 'get',
+        path: '/api/v1/boards/{id}/members',
+        tags: ['Board'],
+        summary: 'Get all members of a board',
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.uuid().openapi({
+                    example: 'b9860e4c-5ba0-4715-b483-87fc69bfc6ef',
+                    description: 'Board UUID',
+                    format: 'uuid'
+                })
+            })
+        },
+        responses: {
+            200: {
+                description: 'Board members retrieved successfully',
+                content: {
+                    'application/json': {
+                        schema: z.object({
+                            success: z.boolean(),
+                            data: z.array(z.object({
+                                id: z.string(),
+                                userId: z.string(),
+                                username: z.string().optional(),
+                                fullname: z.string().optional(),
+                                email: z.string().optional(),
+                                avatarUrl: z.string().optional().nullable(),
+                                roleId: z.string(),
+                                roleName: z.string().optional(),
+                                joinedAt: z.date()
+                            }))
+                        })
+                    }
+                }
+            }
+        }
+    })
+
+    router.get('/:id/members',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_VIEW)),
+        asyncHandler(boardController.getBoardMembers))
+
     boardRegistry.registerPath({
         method: 'patch',
         path: '/api/v1/boards/{id}/invite/link/{linkId}/revoke',

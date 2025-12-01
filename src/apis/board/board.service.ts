@@ -283,6 +283,37 @@ export default class BoardService {
         }
     }
 
+    getBoardMembers = async (boardId: string): Promise<any[]> => {
+        const board = await this.boardRepository.findById(boardId);
+        if (!board) {
+            throw new NotFoundError('Board not found');
+        }
+
+        const members = await this.boardMemberRepository.findByBoardId(boardId);
+        
+        // Populate user and role info
+        const membersWithDetails = await Promise.all(
+            members.map(async (member) => {
+                const user = await this.userRepository.findById(member.userId);
+                const role = await this.roleRepository.findById(member.roleId);
+                
+                return {
+                    id: member.id,
+                    userId: member.userId,
+                    username: user?.username,
+                    fullname: user?.fullname,
+                    email: user?.email,
+                    avatarUrl: user?.avatarUrl,
+                    roleId: member.roleId,
+                    roleName: role?.name,
+                    joinedAt: member.created_at,
+                };
+            })
+        );
+
+        return membersWithDetails;
+    }
+
     private async validateJoinLink(joinLink: BoardJoinLink): Promise<void> {
         if (!joinLink.isActive) {
             throw new BadRequestError('Join link is inactive');
