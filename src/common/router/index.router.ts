@@ -106,12 +106,15 @@ const initBoardModule = () => {
     const boardMemberRepository = new BoardMemberRepository(boardMemberOrmRepo);
     const roleOrmRepo = AppDataSource.getRepository(Role);
     const roleRepository = new RoleRepository(roleOrmRepo);
+    const userOrmRepo = AppDataSource.getRepository(User);
+    const userRepository = new UserRepository(userOrmRepo);
     const boardService = new BoardService(
         boardRepository, 
         workspaceRepository, 
         boardJoinLinkRepository,
         boardMemberRepository,
-        roleRepository
+        roleRepository,
+        userRepository
     );
     const boardController = new BoardController(boardService);
 

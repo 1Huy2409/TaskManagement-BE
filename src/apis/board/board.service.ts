@@ -7,19 +7,26 @@ import { IWorkspaceRepository } from "../workspace/repositories/workspace.reposi
 import { IBoardJoinLinkRepository } from "./repositories/board-join-link.repository.interface";
 import { IBoardMemberRepository } from "./repositories/board-member.repository.interface";
 import { IRoleRepository } from "../role/repositories/role.repository.interface";
+import { IUserRepository } from "../user/repositories/user.repository.interface";
 import { BoardVisibility } from '@/common/entities/board.entity';
 import { BoardJoinLink } from "@/common/entities/board-join-link.entity";
 import { RoleScope } from "@/common/entities/role.entity";
 import { nanoid } from "nanoid";
+import { EmailService } from "@/common/utils/mailService";
 
 export default class BoardService {
+    private emailService: EmailService;
+
     constructor(
         private boardRepository: IBoardRepository,
         private workspaceRepository: IWorkspaceRepository,
         private boardJoinLinkRepository: IBoardJoinLinkRepository,
         private boardMemberRepository: IBoardMemberRepository,
         private roleRepository: IRoleRepository,
-    ) { }
+        private userRepository: IUserRepository,
+    ) {
+        this.emailService = new EmailService();
+    }
 
     // get board with visibility is public
     getAllPublicBoards = async (): Promise<BoardResponse[]> => {
@@ -96,8 +103,7 @@ export default class BoardService {
         // Calculate expiration date if expiresIn is provided
         let expiresAt: Date | null = null;
         if (data.expiresIn) {
-            expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + data.expiresIn);
+            expiresAt = new Date(Date.now() + data.expiresIn);
         }
 
         const joinLink = await this.boardJoinLinkRepository.create({
@@ -183,20 +189,98 @@ export default class BoardService {
         return { message: 'Join link deleted successfully' }
     }
 
-    inviteByEmail = async (boardId: string, data: InviteByEmailDto, inviterId: string): Promise<{ message: string }> => {
+    inviteByEmail = async (boardId: string, data: InviteByEmailDto, inviterId: string): Promise<{ 
+        message: string; 
+        userExists?: boolean; 
+        userId?: string; 
+        inviteLink?: string; 
+        expiresAt?: Date | null; 
+        emailSent?: boolean;
+        error?: string;
+    }> => {
         const board = await this.boardRepository.findById(boardId);
         if (!board) {
             throw new NotFoundError('Board not found');
         }
 
-        // TODO: Implement user lookup by email and send invitation email
-        // For now, this is a placeholder that would:
-        // 1. Look up user by email in the database
-        // 2. If user exists, add them directly to the board
-        // 3. If user doesn't exist, send an email invitation with a signup link
-        // 4. Use an email service (SendGrid, AWS SES, etc.)
+        // Find user by email
+        const invitedUser = await this.userRepository.findByEmail(data.email);
 
-        throw new BadRequestError('Email invitation feature is not yet implemented. Please use join links instead.');
+        // Get roleId - if not provided, use board_member role
+        let roleId = data.roleId;
+        if (!roleId) {
+            const boardMemberRole = await this.roleRepository.findByName('board_member', RoleScope.BOARD);
+            if (!boardMemberRole) {
+                throw new NotFoundError('Default board_member role not found');
+            }
+            roleId = boardMemberRole.id;
+        }
+
+        // If user exists, add them to the board directly
+        if (invitedUser) {
+            // Check if already a member
+            const existingMember = await this.boardMemberRepository.findByBoardAndUserId(boardId, invitedUser.id);
+            if (existingMember) {
+                throw new ConflictRequestError('User is already a member of this board');
+            }
+
+            // Add user to board
+            await this.boardMemberRepository.create({
+                boardId,
+                userId: invitedUser.id,
+                roleId,
+            });
+
+            return {
+                message: 'User added to board successfully',
+                userExists: true,
+                userId: invitedUser.id,
+            };
+        }
+
+        // User doesn't exist - create invite link and send email
+        const inviteLink = await this.createBoardJoinLink(
+            boardId,
+            inviterId,
+            {
+                expiresIn: 7 * 24 * 60 * 60 * 1000, // 7 days for email invites
+                maxUses: 1, // One-time use for email invites
+                roleId,
+            }
+        );
+
+        // Get inviter info for email
+        const inviter = await this.userRepository.findById(inviterId);
+        const inviterName = inviter?.fullname || inviter?.username || 'A team member';
+
+        // Send invitation email
+        try {
+            await this.emailService.sendBoardInvitation(
+                data.email,
+                board.title,
+                inviterName,
+                inviteLink.fullLink,
+                inviteLink.expiresAt
+            );
+
+            return {
+                message: 'Invitation email sent successfully',
+                userExists: false,
+                inviteLink: inviteLink.fullLink,
+                expiresAt: inviteLink.expiresAt,
+                emailSent: true,
+            };
+        } catch (error) {
+            // If email fails, still return the invite link
+            return {
+                message: 'Invite link created but email sending failed. Please share the link manually.',
+                userExists: false,
+                inviteLink: inviteLink.fullLink,
+                expiresAt: inviteLink.expiresAt,
+                emailSent: false,
+                error: error instanceof Error ? error.message : 'Unknown error',
+            };
+        }
     }
 
     private async validateJoinLink(joinLink: BoardJoinLink): Promise<void> {
