@@ -10,6 +10,7 @@ import { Card } from "../common/entities/card.entity";
 import { CardMember } from "../common/entities/card-member.entity";
 import { Board } from "../common/entities/board.entity";
 import { BoardMember } from "../common/entities/board-member.entity";
+import { BoardJoinLink } from "../common/entities/board-join-link.entity";
 import { Role } from "../common/entities/role.entity";
 import { Permission } from "../common/entities/permission.entity";
 import { RolePermission } from "../common/entities/role-permission.entity";
@@ -26,7 +27,7 @@ export const AppDataSource = new DataSource({
     connectTimeoutMS: 10000,
     synchronize: true,
     logging: true,
-    entities: [User, Workspace, WorkspaceMember, Notification, List, Comment, Card, CardMember, Board, BoardMember, Role, Permission, RolePermission, WorkspaceJoinLink],
+    entities: [User, Workspace, WorkspaceMember, Notification, List, Comment, Card, CardMember, Board, BoardMember, BoardJoinLink, Role, Permission, RolePermission, WorkspaceJoinLink],
     migrations: [path.join(__dirname, '../common/migrations/*.{ts,js}')],
     migrationsRun: false
 })
