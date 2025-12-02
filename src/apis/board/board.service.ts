@@ -216,6 +216,10 @@ export default class BoardService {
             roleId = boardMemberRole.id;
         }
 
+        // Get inviter info for email
+        const inviter = await this.userRepository.findById(inviterId);
+        const inviterName = inviter?.fullname || inviter?.username || 'A team member';
+
         // If user exists, add them to the board directly
         if (invitedUser) {
             // Check if already a member
@@ -231,11 +235,33 @@ export default class BoardService {
                 roleId,
             });
 
-            return {
-                message: 'User added to board successfully',
-                userExists: true,
-                userId: invitedUser.id,
-            };
+            // Send notification email for existing user
+            try {
+                const boardLink = `${process.env.FRONTEND_BASE_URL || 'http://localhost:3000'}/boards/${boardId}`;
+                await this.emailService.sendBoardInvitation(
+                    data.email,
+                    board.title,
+                    inviterName,
+                    boardLink,
+                    null // No expiration for existing users
+                );
+
+                return {
+                    message: 'User added to board successfully and notification email sent',
+                    userExists: true,
+                    userId: invitedUser.id,
+                    emailSent: true,
+                };
+            } catch (error) {
+                // User was added but email failed
+                return {
+                    message: 'User added to board successfully but email notification failed',
+                    userExists: true,
+                    userId: invitedUser.id,
+                    emailSent: false,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                };
+            }
         }
 
         // User doesn't exist - create invite link and send email
@@ -248,10 +274,6 @@ export default class BoardService {
                 roleId,
             }
         );
-
-        // Get inviter info for email
-        const inviter = await this.userRepository.findById(inviterId);
-        const inviterName = inviter?.fullname || inviter?.username || 'A team member';
 
         // Send invitation email
         try {
