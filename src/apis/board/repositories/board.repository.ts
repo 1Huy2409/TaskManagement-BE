@@ -36,6 +36,11 @@ export class BoardRepository implements IBoardRepository {
             where: { id, workspaceId: workspaceId, status: BoardStatus.ACTIVE }
         });
     }
+    async findByTitleAndWorkspaceId(title: string, workspaceId: string): Promise<Board | null> {
+        return await this.boardRepository.findOne({
+            where: { title, workspaceId: workspaceId, status: BoardStatus.ACTIVE }
+        });
+    }
 
     async create(data: Partial<Board>): Promise<Board> {
         const board = this.boardRepository.create(data);
