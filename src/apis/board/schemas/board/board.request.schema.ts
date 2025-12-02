@@ -33,8 +33,33 @@ export const PatchBoardRequest: ZodRequestBody = {
     }
 }
 
+export const CreateBoardWithWorkspaceSchema = CreateBoardSchema.extend({
+    workspaceId: z.string().uuid().openapi({
+        description: 'Workspace ID where the board belongs to',
+        example: '123e4567-e89b-12d3-a456-426614174111'
+    })
+});
+
+export const PostBoardWithWorkspaceRequest: ZodRequestBody = {
+    description: 'Create new board within a workspace',
+    content: {
+        'application/json': {
+            schema: CreateBoardWithWorkspaceSchema.openapi({
+                example: {
+                    title: 'Project Alpha',
+                    description: 'This is a sample board description.',
+                    coverUrl: 'https://example.com/cover.jpg',
+                    visibility: BoardVisibility.WORKSPACE,
+                    workspaceId: '123e4567-e89b-12d3-a456-426614174111'
+                }
+            })
+        }
+    }
+}
+
 export type CreateBoardSchema = z.infer<typeof CreateBoardSchema>;
 export type UpdateBoardSchema = z.infer<typeof UpdateBoardSchema>;
+export type CreateBoardWithWorkspaceSchema = z.infer<typeof CreateBoardWithWorkspaceSchema>;
 export type PostBoardRequest = z.infer<typeof CreateBoardSchema>;
 export type PatchBoardRequest = z.infer<typeof UpdateBoardSchema>;
-
+export type PostBoardWithWorkspaceRequest = z.infer<typeof CreateBoardWithWorkspaceSchema>;
