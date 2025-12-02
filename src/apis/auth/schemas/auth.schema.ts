@@ -8,7 +8,7 @@ export const LoginResponseSchema = z.object({
 })
 export const PostLoginSchema = z.object({
     username: z.string().min(4).max(20).openapi({ example: 'lebao0204' }),
-    password: z.string().min(6).max(255).openapi({ example: 'your_password' })
+    password: z.string().min(6).max(255).openapi({ example: '@Lebao123' })
 })
 export const PostLogin: ZodRequestBody = {
     description: 'Login form',
@@ -18,11 +18,15 @@ export const PostLogin: ZodRequestBody = {
         }
     }
 }
+// password policy: at least 8 chars, one lower, one upper, one digit, one special char
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+const PASSWORD_MESSAGE = 'Password must be at least 8 characters long and include uppercase, lowercase, number and special character.';
+
 export const PostRegisterSchema = z.object({
     fullname: z.string().min(4).max(255).openapi({ example: "Nguyen Huu Nhat Huy" }),
     username: z.string().min(4).max(20).openapi({ example: "username@123" }),
     email: z.email().openapi({ example: "nguyenvana2409@gmail.com" }),
-    password: z.string().min(6).max(255).openapi({ example: "your_password" })
+    password: z.string().min(8).max(255).regex(PASSWORD_REGEX, PASSWORD_MESSAGE).openapi({ example: "P@ssw0rd!" })
 })
 export type RegisterForm = z.infer<typeof PostRegisterSchema>
 export const PostRegister: ZodRequestBody = {
@@ -73,7 +77,7 @@ export const CompleteRegisterSchema = z.object({
     email: z.email(),
     fullname: z.string().min(1),
     username: z.string().min(3),
-    password: z.string().min(6)
+    password: z.string().min(8).max(255).regex(PASSWORD_REGEX, PASSWORD_MESSAGE)
 });
 
 export const PostCompleteRegister = {
@@ -93,7 +97,7 @@ export type CompleteRegisterForm = z.infer<typeof CompleteRegisterSchema>;
 // Reset password after forgot-password verify: only email + newPassword required
 export const ResetPasswordSchema = z.object({
     email: z.email(),
-    newPassword: z.string().min(6)
+    newPassword: z.string().min(8).max(255).regex(PASSWORD_REGEX, PASSWORD_MESSAGE).openapi({ example: 'P@ssw0rd!' })
 });
 
 export const PostResetPassword = {
@@ -109,7 +113,7 @@ export type ResetPasswordForm = z.infer<typeof ResetPasswordSchema>;
 export const ResetPasswordSchemaHaveLoggedIn = z.object({
     email: z.email(),
     currentPassword: z.string().min(6),
-    newPassword: z.string().min(6),
+    newPassword: z.string().min(8).max(255).regex(PASSWORD_REGEX, PASSWORD_MESSAGE),
 
 });
 export const PostResetPasswordHaveLoggedIn = {
