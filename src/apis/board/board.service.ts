@@ -65,7 +65,10 @@ export default class BoardService {
         if (!workspace) {
             throw new NotFoundError(`Workspace with ID ${workspaceId} not found`);
         }
-
+        const existingBoard = await this.boardRepository.findByTitleAndWorkspaceId(data.title, workspaceId);
+        if (existingBoard) {
+            throw new ConflictRequestError('A board with the same title already exists in this workspace');
+        }
         const board = await this.boardRepository.create({
             title: data.title,
             description: data.description ?? '',
@@ -75,7 +78,15 @@ export default class BoardService {
             ownerId: creatorId,
             createdBy: creatorId
         });
-
+        const ownerRole = await this.roleRepository.findByName('board_owner', RoleScope.BOARD);
+        if (!ownerRole) {
+            throw new NotFoundError('Board owner role not found');
+        }
+        await this.boardMemberRepository.create({
+            boardId: board.id,
+            userId: creatorId,
+            roleId: ownerRole.id,
+        });
         return toBoardResponse(board);
     }
 
@@ -113,11 +124,11 @@ export default class BoardService {
         }
 
         const token = nanoid(10);
-        
+
         // Calculate expiration date if expiresIn is provided
-        let expiresAt: Date | null = null;
+        let expiresAt = new Date();
         if (data.expiresIn) {
-            expiresAt = new Date(Date.now() + data.expiresIn);
+            expiresAt.setDate(expiresAt.getDate() + data.expiresIn);
         }
 
         const joinLink = await this.boardJoinLinkRepository.create({
@@ -203,12 +214,12 @@ export default class BoardService {
         return { message: 'Join link deleted successfully' }
     }
 
-    inviteByEmail = async (boardId: string, data: InviteByEmailDto, inviterId: string): Promise<{ 
-        message: string; 
-        userExists?: boolean; 
-        userId?: string; 
-        inviteLink?: string; 
-        expiresAt?: Date | null; 
+    inviteByEmail = async (boardId: string, data: InviteByEmailDto, inviterId: string): Promise<{
+        message: string;
+        userExists?: boolean;
+        userId?: string;
+        inviteLink?: string;
+        expiresAt?: Date | null;
         emailSent?: boolean;
         error?: string;
     }> => {
@@ -303,13 +314,13 @@ export default class BoardService {
         }
 
         const members = await this.boardMemberRepository.findByBoardId(boardId);
-        
+
         // Populate user and role info
         const membersWithDetails = await Promise.all(
             members.map(async (member) => {
                 const user = await this.userRepository.findById(member.userId);
                 const role = await this.roleRepository.findById(member.roleId);
-                
+
                 return {
                     id: member.id,
                     userId: member.userId,
@@ -331,12 +342,12 @@ export default class BoardService {
         if (!joinLink.isActive) {
             throw new BadRequestError('Join link is inactive');
         }
-        
+
         // Only check expiration if expiresAt is set
         if (joinLink.expiresAt && new Date() > joinLink.expiresAt) {
             throw new BadRequestError('Join link has expired');
         }
-        
+
         // Only check max uses if it's set
         if (joinLink.maxUses && joinLink.usedCount >= joinLink.maxUses) {
             throw new BadRequestError('Join link has reached its maximum uses');
