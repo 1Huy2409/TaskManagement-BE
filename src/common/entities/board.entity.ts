@@ -4,6 +4,7 @@ import { Workspace } from "./workspace.entity";
 import { List } from "./list.entity";
 import { BoardMember } from "./board-member.entity";
 import { BoardJoinLink } from "./board-join-link.entity";
+import { User } from "./user.entity";
 
 export enum BoardVisibility {
     PRIVATE = 'private',
@@ -30,6 +31,12 @@ export class Board extends DateTimeEntity {
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
 
+    @Column({ type: 'uuid' })
+    ownerId: string;
+
+    @ManyToOne(() => User, (user) => user.boardMembers, { nullable: false, onDelete: 'RESTRICT' })
+    @JoinColumn({ name: 'ownerId' })
+    owner: User;
     @Column({ type: 'uuid', nullable: true })
     createdBy: string
 

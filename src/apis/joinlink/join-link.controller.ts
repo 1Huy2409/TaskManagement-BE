@@ -16,7 +16,7 @@ export class JoinLinkController {
         if (!id) {
             throw new BadRequestError("Workspace ID is required");
         }
-        const userId = req.user ? req.user.id : null;
+        const userId = req.user ? (req.user as any).id : null;
         if (!userId) {
             throw new AuthFailureError("You 're not authenticated!");
         }

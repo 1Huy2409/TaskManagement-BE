@@ -10,4 +10,7 @@ export interface IBoardRepository extends IBaseRepository<Board> {
     create(data: Partial<Board>): Promise<Board>;
     update(id: string, data: Partial<Board>): Promise<Board>;
     delete(id: string): Promise<any>;
+    reopen(id: string): Promise<any>;
+    deletePermanent(id: string): Promise<any>;
+    changeOwner(id: string, ownerId: string): Promise<Board>;
 }

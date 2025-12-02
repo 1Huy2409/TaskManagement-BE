@@ -47,6 +47,19 @@ export default class BoardService {
         return await this.boardRepository.delete(id);
     }
 
+    reopen = async (id: string): Promise<any> => {
+        return await this.boardRepository.reopen(id);
+    }
+
+    deletePermanent = async (id: string): Promise<any> => {
+        return await this.boardRepository.deletePermanent(id);
+    }
+
+    changeOwner = async (id: string, ownerId: string): Promise<BoardResponse> => {
+        const board = await this.boardRepository.changeOwner(id, ownerId);
+        return toBoardResponse(board);
+    }
+
     createBoard = async (workspaceId: string, data: CreateBoardSchema, creatorId: string): Promise<BoardResponse> => {
         const workspace = await this.workspaceRepository.findById(workspaceId);
         if (!workspace) {

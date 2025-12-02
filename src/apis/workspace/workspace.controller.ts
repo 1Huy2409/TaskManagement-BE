@@ -187,7 +187,9 @@ export default class WorkspaceController {
         if (!id) {
             throw new BadRequestError('Workspace id is required');
         }
-        const newBoard = await this.workspaceService.addBoardToWorkspace(id, boardData)
+        const ownerId = req.user?.id;
+        if (!ownerId) throw new AuthFailureError('Authentication failure');
+        const newBoard = await this.workspaceService.addBoardToWorkspace(id, boardData, ownerId)
         const serviceResponse = new ServiceResponse(
             ResponseStatus.Sucess,
             'Add board into workspace successfully',

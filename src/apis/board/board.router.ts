@@ -288,5 +288,54 @@ export default function boardRouter(boardController: BoardController): Router {
         asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_MANAGE_MEMBERS)),
         asyncHandler(boardController.inviteByEmail))
 
+    // reopen archived board
+    boardRegistry.registerPath({
+        method: 'post',
+        path: '/api/v1/boards/{id}/reopen',
+        tags: ['Board'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({ id: z.uuid() })
+        },
+        responses: createApiResponse(z.null(), 'Success')
+    })
+    router.post('/:id/reopen',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_UPDATE)),
+        asyncHandler(boardController.reopenBoard))
+
+    // permanent delete
+    boardRegistry.registerPath({
+        method: 'delete',
+        path: '/api/v1/boards/{id}/permanent',
+        tags: ['Board'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({ id: z.uuid() })
+        },
+        responses: createApiResponse(z.null(), 'Success')
+    })
+    router.delete('/:id/permanent',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_DELETE)),
+        asyncHandler(boardController.deletePermanent))
+
+    // change owner
+    const ChangeOwnerBody = z.object({ ownerId: z.string().uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }) });
+    boardRegistry.registerPath({
+        method: 'post',
+        path: '/api/v1/boards/{id}/change-owner',
+        tags: ['Board'],
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({ id: z.uuid() }),
+            body: ChangeOwnerBody
+        },
+        responses: createApiResponse(BoardResponseSchema, 'Success')
+    })
+    router.post('/:id/change-owner',
+        asyncHandler(checkAuthentication),
+        asyncHandler(checkBoardPermission(PERMISSIONS.BOARD_UPDATE)),
+        asyncHandler(boardController.changeOwner))
     return router;
 }
