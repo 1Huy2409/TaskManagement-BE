@@ -72,6 +72,7 @@ export default class BoardService {
             coverUrl: data.coverUrl ?? '',
             visibility: data.visibility,
             workspaceId,
+            ownerId: creatorId,
             createdBy: creatorId
         });
 
@@ -258,7 +259,6 @@ export default class BoardService {
             {
                 expiresIn: 7 * 24 * 60 * 60 * 1000, // 7 days for email invites
                 maxUses: 1, // One-time use for email invites
-                roleId,
             }
         );
 
