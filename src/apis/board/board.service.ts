@@ -56,8 +56,49 @@ export default class BoardService {
     }
 
     changeOwner = async (id: string, ownerId: string): Promise<BoardResponse> => {
-        const board = await this.boardRepository.changeOwner(id, ownerId);
-        return toBoardResponse(board);
+        const board = await this.boardRepository.findById(id);
+        if (!board) {
+            throw new NotFoundError('Board not found');
+        }
+
+        if (board.ownerId === ownerId) {
+            return toBoardResponse(board);
+        }
+
+       
+        const boardOwnerRole = await this.roleRepository.findByName('board_owner', RoleScope.BOARD);
+        const boardMemberRole = await this.roleRepository.findByName('board_member', RoleScope.BOARD);
+        if (!boardOwnerRole || !boardMemberRole) {
+            throw new NotFoundError('Board roles not found');
+        }
+
+        try {
+            const prevOwnerMember = await this.boardMemberRepository.findByBoardAndUserId(board.id, board.ownerId);
+            if (prevOwnerMember) {
+                prevOwnerMember.roleId = boardMemberRole.id;
+                prevOwnerMember.role = boardMemberRole as any;
+                await this.boardMemberRepository.save(prevOwnerMember);
+            }
+        } catch (err) {
+            
+        }
+
+      
+        const newOwnerMember = await this.boardMemberRepository.findByBoardAndUserId(board.id, ownerId);
+        if (!newOwnerMember) {
+            throw new NotFoundError('New owner is not a member of the board');
+           
+        } else {
+             newOwnerMember.roleId = boardOwnerRole.id;
+            newOwnerMember.role = boardOwnerRole as any;
+            await this.boardMemberRepository.save(newOwnerMember);
+           
+          
+        }
+
+        // update board owner
+        const updated = await this.boardRepository.changeOwner(id, ownerId);
+        return toBoardResponse(updated);
     }
 
     createBoard = async (workspaceId: string, data: CreateBoardSchema, creatorId: string): Promise<BoardResponse> => {
