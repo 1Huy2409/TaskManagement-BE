@@ -233,7 +233,7 @@ export default class WorkspaceService {
         const boards = await this.boardRepository.findBoardsByWorkspaceId(workspaceId);
         return boards.map(toBoardResponse);
     }
-    addBoardToWorkspace = async (workspaceId: string, boardData: CreateBoardSchema): Promise<BoardResponse> => {
+    addBoardToWorkspace = async (workspaceId: string, boardData: CreateBoardSchema, ownerId: string): Promise<BoardResponse> => {
         const workspace = await this.workspaceRepository.findById(workspaceId);
         if (!workspace) {
             throw new NotFoundError(`Workspace with id ${workspaceId} not found`);
@@ -243,7 +243,9 @@ export default class WorkspaceService {
             description: boardData.description ?? '',
             coverUrl: boardData.coverUrl ?? '',
             visibility: boardData.visibility ?? BoardVisibility.WORKSPACE,
-            workspaceId: workspaceId
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            createdBy: ownerId
         });
         return toBoardResponse(newBoard);
     }

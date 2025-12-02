@@ -57,4 +57,36 @@ export class BoardRepository implements IBoardRepository {
             message: 'Board deleted successfully'
         }
     }
+
+    async reopen(id: string): Promise<any> {
+        const board = await this.boardRepository.findOne({ where: { id } });
+        if (!board) {
+            throw new NotFoundError(`Board with ID ${id} not found`);
+        }
+        board.isActive = true;
+        await this.boardRepository.save(board);
+        return {
+            message: 'Board reopened successfully'
+        }
+    }
+
+    async deletePermanent(id: string): Promise<any> {
+        const board = await this.boardRepository.findOne({ where: { id } });
+        if (!board) {
+            throw new NotFoundError(`Board with ID ${id} not found`);
+        }
+        await this.boardRepository.delete(id);
+        return {
+            message: 'Board permanently deleted'
+        }
+    }
+
+    async changeOwner(id: string, ownerId: string): Promise<Board> {
+        const board = await this.boardRepository.findOne({ where: { id } });
+        if (!board) {
+            throw new NotFoundError(`Board with ID ${id} not found`);
+        }
+        board.ownerId = ownerId;
+        return await this.boardRepository.save(board);
+    }
 }

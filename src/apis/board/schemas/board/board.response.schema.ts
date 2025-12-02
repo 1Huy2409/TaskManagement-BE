@@ -10,7 +10,8 @@ export const BoardResponseSchema = z.object({
     description: z.string().max(1000).nullable().optional().openapi({ example: 'This is a sample board description.' }),
     coverUrl: z.url().min(10).max(255).optional().openapi({ example: 'https://example.com/cover.jpg' }),
     visibility: z.enum(BoardVisibility).openapi({ example: BoardVisibility.WORKSPACE }),
-    workspaceId: z.uuid().optional().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
+    ownerId: z.string().uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
+    workspaceId: z.uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
     created_at: z.date().optional(),
     updated_at: z.date().optional()
 })

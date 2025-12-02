@@ -47,4 +47,45 @@ export default class BoardController {
         )
         return handleServiceResponse(serviceResponse, res);
     }
+
+    reopenBoard = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) throw new BadRequestError('Board id is required');
+        await this.boardService.reopen(id);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Reopen board successfully',
+            null,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+
+    deletePermanent = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        if (!id) throw new BadRequestError('Board id is required');
+        await this.boardService.deletePermanent(id);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Board permanently deleted',
+            null,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
+
+    changeOwner = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        const { ownerId } = req.body as { ownerId?: string };
+        if (!id) throw new BadRequestError('Board id is required');
+        if (!ownerId) throw new BadRequestError('ownerId is required');
+        const updated = await this.boardService.changeOwner(id, ownerId);
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Sucess,
+            'Board owner updated successfully',
+            updated,
+            StatusCodes.OK
+        )
+        return handleServiceResponse(serviceResponse, res);
+    }
 }
