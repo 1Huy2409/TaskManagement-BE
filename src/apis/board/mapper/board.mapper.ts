@@ -8,6 +8,7 @@ export const toBoardResponse = (board: Board): BoardResponse => ({
     coverUrl: board.coverUrl,
     visibility: board.visibility,
     ownerId: board.ownerId ?? null,
+    status: board.status,
     workspaceId: board.workspaceId,
     created_at: board.created_at,
     updated_at: board.updated_at,

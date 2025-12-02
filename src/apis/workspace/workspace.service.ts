@@ -5,7 +5,7 @@ import { Repository } from "typeorm";
 import { CreateWorkspaceSchema, UpdateWorkspaceSchema, WorkspaceMemberResponse, WorkspaceResponse } from "./schemas";
 import { toWorkspaceResponse } from "./mapper/workspace.mapper";
 import { WorkspaceMember } from "@/common/entities/workspace-member.entity";
-import { Board, BoardVisibility } from '@/common/entities/board.entity';
+import { Board, BoardVisibility, BoardStatus } from '@/common/entities/board.entity';
 import { BoardResponse, CreateBoardSchema, UpdateBoardSchema } from '../board/schemas';
 import { toBoardResponse } from '../board/mapper/board.mapper';
 import { Role, RoleScope } from '@/common/entities/role.entity';
@@ -133,7 +133,10 @@ export default class WorkspaceService {
         }
         // update status
         workspace.isActive = false;
-        workspace.boards.forEach(board => board.isActive = false);
+        workspace.boards.forEach(board => {
+            board.isActive = false;
+            board.status = BoardStatus.ARCHIVED;
+        });
         await this.workspaceRepository.update(id, workspace);
         await this.rbacService.onWorkspaceDeleted(id);
         return {

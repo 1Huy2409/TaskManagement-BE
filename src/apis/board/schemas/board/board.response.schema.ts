@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import { BoardVisibility } from '@/common/entities/board.entity';
+import { BoardVisibility, BoardStatus } from '@/common/entities/board.entity';
 
 extendZodWithOpenApi(z);
 
@@ -11,6 +11,7 @@ export const BoardResponseSchema = z.object({
     coverUrl: z.url().min(10).max(255).optional().openapi({ example: 'https://example.com/cover.jpg' }),
     visibility: z.enum(BoardVisibility).openapi({ example: BoardVisibility.WORKSPACE }),
     ownerId: z.string().uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
+    status: z.enum(BoardStatus).openapi({ example: BoardStatus.ACTIVE }),
     workspaceId: z.uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }),
     created_at: z.date().optional(),
     updated_at: z.date().optional()

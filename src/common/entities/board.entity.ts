@@ -11,6 +11,10 @@ export enum BoardVisibility {
     WORKSPACE = 'workspace',
     PUBLIC = 'public'
 }
+export enum BoardStatus {
+    ACTIVE = 'active',
+    ARCHIVED = 'archived'
+}
 @Entity('boards')
 export class Board extends DateTimeEntity {
     @PrimaryGeneratedColumn('uuid')
@@ -27,6 +31,9 @@ export class Board extends DateTimeEntity {
 
     @Column({ type: 'enum', enum: BoardVisibility, default: BoardVisibility.WORKSPACE })
     visibility: BoardVisibility;
+
+    @Column({ type: 'enum', enum: BoardStatus, default: BoardStatus.ACTIVE })
+    status: BoardStatus;
 
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
