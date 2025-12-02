@@ -33,9 +33,17 @@ export class EmailService {
     }
 
     async sendBoardInvitation(email: string, boardName: string, inviterName: string, inviteLink: string, expiresAt?: Date | null): Promise<void> {
+        const isExistingUser = !expiresAt; // If no expiration, it's for existing user
+        
         const expiryText = expiresAt 
             ? `<p style="color: #6B7280;">This invitation will expire on ${expiresAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}.</p>`
-            : '<p style="color: #6B7280;">This invitation does not expire.</p>';
+            : '';
+
+        const actionText = isExistingUser 
+            ? 'You have been added to the board! Click the button below to view it.'
+            : 'Click the button below to accept the invitation and join the board.';
+
+        const buttonText = isExistingUser ? 'View Board' : 'Accept Invitation';
 
         const mailOptions = {
             from: process.env.SMTP_USER,
@@ -50,12 +58,12 @@ export class EmailService {
                         </p>
                         <h3 style="color: #4F46E5; margin: 20px 0;">${boardName}</h3>
                         <p style="color: #6B7280; margin-bottom: 30px;">
-                            Click the button below to accept the invitation and join the board.
+                            ${actionText}
                         </p>
                         <div style="text-align: center; margin: 30px 0;">
                             <a href="${inviteLink}" 
                                style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
-                                Accept Invitation
+                                ${buttonText}
                             </a>
                         </div>
                         ${expiryText}
