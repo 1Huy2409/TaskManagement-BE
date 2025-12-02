@@ -6,6 +6,4 @@ export type MembershipScope = RoleScope;
 export interface Membership {
     scope: MembershipScope;
     role: Role;
-    workspaceId: string;
-    boardId: string;
 }   
