@@ -16,6 +16,8 @@ import WorkspaceController from '@/apis/workspace/workspace.controller'
 import workspaceRouter from '@/apis/workspace/workspace.router'
 import { WorkspaceMember } from '../entities/workspace-member.entity'
 import { Board } from '../entities/board.entity'
+import { BoardMember } from '../entities/board-member.entity'
+import { BoardJoinLink } from '../entities/board-join-link.entity'
 import BoardService from '@/apis/board/board.service'
 import BoardController from '@/apis/board/board.controller'
 import boardRouter from '@/apis/board/board.router'
@@ -24,6 +26,8 @@ import { UserRepository } from '@/apis/user/repositories/user.repository'
 import { WorkspaceRepository } from '@/apis/workspace/repositories/workspace.repository'
 import { WorkspaceMemberRepository } from '@/apis/workspace/repositories/workspace-member.repository'
 import { BoardRepository } from '@/apis/board/repositories/board.repository'
+import { BoardMemberRepository } from '@/apis/board/repositories/board-member.repository'
+import { BoardJoinLinkRepository } from '@/apis/board/repositories/board-join-link.repository'
 import { RoleRepository } from '@/apis/role/repositories/role.repository'
 import { WorkspaceJoinLink } from '../entities/workspace-join-link.entity'
 import { JoinLinkRepository } from '@/apis/joinlink/repositories/join-link.repository'
@@ -35,6 +39,8 @@ import { PermissionRepository } from '@/apis/permission/repositories/permission.
 import { RolePermissionRepository } from '@/apis/role-permission/repositories/role-permission.repository'
 import { RolePermission } from '../entities/role-permission.entity'
 import { WorkspaceRoleService } from '@/apis/workspace/workspace-role.service'
+import { RbacCacheService } from '../rbac/rbac.cache.service'
+import { RbacService } from '../rbac/rbac.service'
 
 const mainRouter: Router = express.Router()
 const initHealthCheckModule = () => {
@@ -71,8 +77,9 @@ const initWorkspaceModule = () => {
     const permissionRepository = new PermissionRepository(permissionOrmRepo);
     const rolePermissionOrmRepo = AppDataSource.getRepository(RolePermission);
     const rolePermissionRepository = new RolePermissionRepository(rolePermissionOrmRepo);
-    const workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository, boardRepository, roleRepository);
-    const workspaceRoleService = new WorkspaceRoleService(roleRepository, permissionRepository, rolePermissionRepository);
+    const rbacService = new RbacService();
+    const workspaceService = new WorkspaceService(workspaceRepository, workspaceMemberRepository, boardRepository, roleRepository, rbacService);
+    const workspaceRoleService = new WorkspaceRoleService(roleRepository, permissionRepository, rolePermissionRepository, rbacService);
     const workspaceController = new WorkspaceController(workspaceService, workspaceRoleService);
 
     mainRouter.use('/workspaces', workspaceRouter(workspaceController));
@@ -86,7 +93,8 @@ const initJoinLinkModule = () => {
     const workspaceRepository = new WorkspaceRepository(workspaceOrmRepo);
     const workspaceMemberRepository = new WorkspaceMemberRepository(workspaceMemberOrmRepo);
     const roleRepository = new RoleRepository(roleOrmRepo);
-    const joinLinkService = new JoinLinkService(joinLinkRepository, workspaceRepository, workspaceMemberRepository, roleRepository);
+    const rbacService = new RbacService();
+    const joinLinkService = new JoinLinkService(joinLinkRepository, workspaceRepository, workspaceMemberRepository, roleRepository, rbacService);
     const joinLinkController = new JoinLinkController(joinLinkService);
 
     mainRouter.use('/workspaces', joinLinkRouter(joinLinkController))
@@ -94,7 +102,24 @@ const initJoinLinkModule = () => {
 const initBoardModule = () => {
     const boardOrmRepo = AppDataSource.getRepository(Board);
     const boardRepository = new BoardRepository(boardOrmRepo);
-    const boardService = new BoardService(boardRepository);
+    const workspaceOrmRepo = AppDataSource.getRepository(Workspace);
+    const workspaceRepository = new WorkspaceRepository(workspaceOrmRepo);
+    const boardJoinLinkOrmRepo = AppDataSource.getRepository(BoardJoinLink);
+    const boardJoinLinkRepository = new BoardJoinLinkRepository(boardJoinLinkOrmRepo);
+    const boardMemberOrmRepo = AppDataSource.getRepository(BoardMember);
+    const boardMemberRepository = new BoardMemberRepository(boardMemberOrmRepo);
+    const roleOrmRepo = AppDataSource.getRepository(Role);
+    const roleRepository = new RoleRepository(roleOrmRepo);
+    const userOrmRepo = AppDataSource.getRepository(User);
+    const userRepository = new UserRepository(userOrmRepo);
+    const boardService = new BoardService(
+        boardRepository, 
+        workspaceRepository, 
+        boardJoinLinkRepository,
+        boardMemberRepository,
+        roleRepository,
+        userRepository
+    );
     const boardController = new BoardController(boardService);
 
     mainRouter.use('/boards', boardRouter(boardController))

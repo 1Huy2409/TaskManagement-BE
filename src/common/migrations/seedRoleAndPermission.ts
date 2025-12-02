@@ -13,18 +13,10 @@ export class SeedRolesAndPermissions1730000000000 implements MigrationInterface 
         const rolePermissionRepository = queryRunner.manager.getRepository(RolePermission);
 
         console.log('Seeding roles and permissions...');
-
-        // Xóa dữ liệu cũ trước khi seed (theo thứ tự để tránh lỗi foreign key)
         console.log('Cleaning old data...');
-
-        // Xóa các bảng tham chiếu đến roles trước
         await queryRunner.query(`DELETE FROM "board-members"`);
         await queryRunner.query(`DELETE FROM "workspace-members"`);
-
-        // Sau đó xóa role-permission
         await queryRunner.query(`DELETE FROM "role-permission"`);
-
-        // Cuối cùng xóa roles và permissions
         await queryRunner.query(`DELETE FROM "roles" WHERE "isSystemRole" = true`);
         await queryRunner.query(`DELETE FROM "permissions"`);
 

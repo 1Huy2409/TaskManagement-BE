@@ -3,6 +3,7 @@ import { DateTimeEntity } from "./base/date-time.entity";
 import { Workspace } from "./workspace.entity";
 import { List } from "./list.entity";
 import { BoardMember } from "./board-member.entity";
+import { BoardJoinLink } from "./board-join-link.entity";
 import { User } from "./user.entity";
 
 export enum BoardVisibility {
@@ -51,4 +52,7 @@ export class Board extends DateTimeEntity {
 
     @OneToMany(() => List, (list) => list.board)
     lists: List[]
+
+    @OneToMany(() => BoardJoinLink, (joinLink) => joinLink.board)
+    joinLinks: BoardJoinLink[]
 }

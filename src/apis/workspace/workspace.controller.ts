@@ -133,21 +133,6 @@ export default class WorkspaceController {
         )
         return handleServiceResponse(serviceResponse, res);
     }
-    addMemberToWorkspace = async (req: Request, res: Response) => {
-        const { id } = req.params;
-        if (!id) {
-            throw new BadRequestError('Workspace id is required');
-        }
-        const data: AddWorkspaceMemberSchema = req.body;
-        const message = await this.workspaceService.addMemberToWorkspace(data, id);
-        const serviceResponse = new ServiceResponse(
-            ResponseStatus.Sucess,
-            'Add member to workspace successfully',
-            message,
-            StatusCodes.OK
-        )
-        return handleServiceResponse(serviceResponse, res);
-    }
     updateMemberRole = async (req: Request, res: Response) => {
         const user = req.user;
         if (!user) {
