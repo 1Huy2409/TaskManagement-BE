@@ -322,6 +322,15 @@ export default function boardRouter(boardController: BoardController): Router {
 
     // change owner
     const ChangeOwnerBody = z.object({ ownerId: z.string().uuid().openapi({ example: '123e4567-e89b-12d3-a456-426614174000' }) });
+    const PostChangeOwnerRequest = {
+        description: 'Change board owner',
+        content: {
+            'application/json': {
+                schema: ChangeOwnerBody.openapi({ example: { ownerId: '123e4567-e89b-12d3-a456-426614174000' } })
+            }
+        }
+    };
+
     boardRegistry.registerPath({
         method: 'post',
         path: '/api/v1/boards/{id}/change-owner',
@@ -329,7 +338,7 @@ export default function boardRouter(boardController: BoardController): Router {
         security: [{ bearerAuth: [] }],
         request: {
             params: z.object({ id: z.uuid() }),
-            body: ChangeOwnerBody
+            body: PostChangeOwnerRequest
         },
         responses: createApiResponse(BoardResponseSchema, 'Success')
     })
