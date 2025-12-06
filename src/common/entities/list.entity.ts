@@ -11,8 +11,11 @@ export class List extends DateTimeEntity {
     @Column({ type: 'varchar', length: 255, nullable: false })
     title: string
 
-    @Column({ type: 'int', default: 0 })
+    @Column({ type: 'float', default: 0 })
     position: number
+
+    @Column({ type: 'boolean', default: false })
+    isArchived: boolean
 
     @ManyToOne(() => Board, (board) => board.lists, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'boardId' })
